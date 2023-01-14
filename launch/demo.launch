@@ -1,5 +1,9 @@
 <launch>
-    <node pkg="path_optimizer_2" type="path_optimizer_2_demo" name="path_optimizer_2_demo" args="--log_dir=." output="screen" />
+  <arg name="image"  default="gridmap.png"/>
+    <node pkg="path_optimizer_2" type="path_optimizer_2_demo2" name="path_optimizer_2_demo" args="--log_dir=." output="screen" >
+      <param name="image" type="str" value="$(arg image)"/>
+
+    </node>
     
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find path_optimizer_2)/config/rvizConfig.rviz" output="screen" />
 </launch>

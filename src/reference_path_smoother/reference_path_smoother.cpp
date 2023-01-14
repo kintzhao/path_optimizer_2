@@ -17,7 +17,8 @@ namespace PathOptimizationNS {
 std::unique_ptr<ReferencePathSmoother> ReferencePathSmoother::create(const std::string &type,
                                                                      const std::vector<State> &input_points,
                                                                      const State &start_state,
-                                                                     const Map &grid_map) {
+                                                            const Map &grid_map) {
+    LOG(INFO)<<"type:"<<type;                                                                
     if (type == "TENSION") {
         return std::unique_ptr<ReferencePathSmoother>{new TensionSmoother(input_points, start_state, grid_map)};
     } else if (type == "TENSION2") {
@@ -30,17 +31,18 @@ std::unique_ptr<ReferencePathSmoother> ReferencePathSmoother::create(const std::
 
 bool ReferencePathSmoother::solve(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path) {
     // TODO: deal with short reference path.
+    LOG(INFO)<<" ReferencePathSmoother::solve:";        
     if (input_points_.size() < 4) {
         LOG(ERROR) << "Few reference points.";
         return false;
     }
-
+    LOG(INFO)<<" bSpline"; 
     bSpline();
-
+    LOG(INFO)<<" smooth"; 
     if (!smooth(reference_path)) return false;
-
+    LOG(INFO)<<" graphSearchDp";
     if (!graphSearchDp(reference_path)) return false;
-
+    LOG(INFO)<<" postSmooth";
     return postSmooth(reference_path);
 }
 
@@ -60,7 +62,7 @@ bool ReferencePathSmoother::segmentRawReference(std::vector<double> *x_list,
     // Divide the raw path.
     double delta_s = 1.0;
     s_list->emplace_back(0);
-    while (s_list->back() < max_s) {
+    while (s_list->back() < max_s) {//TODO::check
         s_list->emplace_back(s_list->back() + delta_s);
     }
     if (max_s - s_list->back() > 1) {
@@ -500,12 +502,14 @@ void ReferencePathSmoother::bSpline() {
     else degree = 5;
     tinyspline::BSpline b_spline_raw(input_points_.size(), 2, degree);
     std::vector<tinyspline::real> ctrlp_raw = b_spline_raw.controlPoints();
+    LOG(INFO)<<"BSpline_Control_points_size:"<<input_points_.size();
     for (size_t i = 0; i != input_points_.size(); ++i) {
         ctrlp_raw[2 * (i)] = input_points_[i].x;
         ctrlp_raw[2 * (i) + 1] = input_points_[i].y;
     }
     b_spline_raw.setControlPoints(ctrlp_raw);
     double delta_t = 1.0 / length;
+    LOG(INFO)<<"BSpline length:"<<length<<" delta_t:"<<delta_t;    
     double tmp_t = 0;
     while (tmp_t < 1) {
         auto result = b_spline_raw.eval(tmp_t).result();
@@ -517,6 +521,8 @@ void ReferencePathSmoother::bSpline() {
     x_list_.emplace_back(result[0]);
     y_list_.emplace_back(result[1]);
     s_list_.emplace_back(0);
+    LOG(INFO)<<"BSpline x_list_size:"<<x_list_.size();
+
     for (size_t i = 1; i != x_list_.size(); ++i) {
         double dis = sqrt(pow(x_list_[i] - x_list_[i - 1], 2) + pow(y_list_[i] - y_list_[i - 1], 2));
         s_list_.emplace_back(s_list_.back() + dis);

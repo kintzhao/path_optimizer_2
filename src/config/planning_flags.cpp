@@ -20,6 +20,21 @@ DEFINE_double(rear_length, -1.0, "rear axle to rear edge");
 DEFINE_double(front_length, 3.9, "rear axle to front edge");
 
 DEFINE_double(max_steering_angle, 35.0 * M_PI / 180.0, "");
+
+// DEFINE_double(car_width, 0.46, "");
+
+// DEFINE_double(car_length, 0.56, "");
+
+// DEFINE_double(safety_margin, 0.3, "mandatory safety margin");
+
+// DEFINE_double(wheel_base, 0.4, "wheel base");
+
+// DEFINE_double(rear_length, -0.28, "rear axle to rear edge");
+
+// DEFINE_double(front_length, 0.28, "rear axle to front edge");
+
+// DEFINE_double(max_steering_angle, 100.0 * M_PI / 180.0, "");
+
 /////
 
 ///// Smoothing related.

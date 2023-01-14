@@ -25,6 +25,7 @@ bool TensionSmoother2::osqpSmooth(const std::vector<double> &x_list,
                                   std::vector<double> *result_x_list,
                                   std::vector<double> *result_y_list,
                                   std::vector<double> *result_s_list) {
+    LOG(INFO)<<" TensionSmoother2::osqpSmooth";                                           
     CHECK_EQ(x_list.size(), y_list.size());
     CHECK_EQ(y_list.size(), angle_list.size());
     CHECK_EQ(angle_list.size(), s_list.size());
@@ -106,9 +107,11 @@ void TensionSmoother2::setConstraintMatrix(const std::vector<double> &x_list,
     const size_t y_start_index = x_start_index + size;
     const size_t theta_start_index = y_start_index + size;
     const size_t k_start_index = theta_start_index + size;
+
     const size_t cons_x_update_start_index = 0;
     const size_t cons_y_update_start_index = cons_x_update_start_index + size - 1;
     const size_t cons_theta_update_start_index = cons_y_update_start_index + size - 1;
+
     const size_t cons_x_index = cons_theta_update_start_index + size - 1;
     const size_t cons_y_index = cons_x_index + 1;
 
@@ -118,11 +121,15 @@ void TensionSmoother2::setConstraintMatrix(const std::vector<double> &x_list,
     // Cons.
     for (int i = 0; i != size - 1; ++i) {
         const double ds = s_list[i + 1] - s_list[i];
-        cons(cons_x_update_start_index + i, x_start_index + i + 1) =
-        cons(cons_y_update_start_index + i, y_start_index + i + 1)
-            = cons(cons_theta_update_start_index + i, theta_start_index + i + 1) = 1;
-        cons(cons_x_update_start_index + i, x_start_index + i) = cons(cons_y_update_start_index + i, y_start_index + i)
-            = cons(cons_theta_update_start_index + i, theta_start_index + i) = -1;
+        cons(cons_x_update_start_index + i, x_start_index + i + 1) 
+            = cons(cons_y_update_start_index + i, y_start_index + i + 1)
+            = cons(cons_theta_update_start_index + i, theta_start_index + i + 1)
+            = 1;
+        cons(cons_x_update_start_index + i, x_start_index + i) 
+            = cons(cons_y_update_start_index + i, y_start_index + i)
+            = cons(cons_theta_update_start_index + i, theta_start_index + i) 
+            = -1;
+
         cons(cons_x_update_start_index + i, theta_start_index + i) = ds * sin(angle_list[i]);
         cons(cons_y_update_start_index + i, theta_start_index + i) = -ds * cos(angle_list[i]);
         cons(cons_theta_update_start_index + i, k_start_index + i) = -ds;
@@ -132,12 +139,15 @@ void TensionSmoother2::setConstraintMatrix(const std::vector<double> &x_list,
     // Bounds.
     for (int i = 0; i != size - 1; ++i) {
         const double ds = s_list[i + 1] - s_list[i];
-        (*lower_bound)(cons_x_update_start_index + i) = (*upper_bound)(cons_x_update_start_index + i) =
-            ds * cos(angle_list[i]);
-        (*lower_bound)(cons_y_update_start_index + i) = (*upper_bound)(cons_y_update_start_index + i) =
-            ds * sin(angle_list[i]);
-        (*lower_bound)(cons_theta_update_start_index + i) = (*upper_bound)(cons_theta_update_start_index + i) =
-            -ds * k_list[i];
+        (*lower_bound)(cons_x_update_start_index + i) 
+            = (*upper_bound)(cons_x_update_start_index + i) 
+            = ds * cos(angle_list[i]);
+        (*lower_bound)(cons_y_update_start_index + i) 
+            = (*upper_bound)(cons_y_update_start_index + i) 
+            = ds * sin(angle_list[i]);
+        (*lower_bound)(cons_theta_update_start_index + i) 
+            = (*upper_bound)(cons_theta_update_start_index + i) 
+            = -ds * k_list[i];
 
     }
     (*lower_bound)(cons_x_index) = (*upper_bound)(cons_x_index) = x_list[0];

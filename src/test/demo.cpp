@@ -72,11 +72,8 @@ void goalCb(const geometry_msgs::PoseStampedConstPtr &goal) {
     std::cout << "get the goal." << std::endl;
 }
 
-int main(int argc, char **argv) {
-    ros::init(argc, argv, "path_optimization");
-    ros::NodeHandle nh("~");
-
-    std::string base_dir = ros::package::getPath("path_optimizer_2");
+void initLog(char **argv, const std::string&  base_dir)
+{
     auto log_dir = base_dir + "/log";
     if (0 != access(log_dir.c_str(), 0)) {
         // if this folder not exist, create a new one.
@@ -90,11 +87,22 @@ int main(int argc, char **argv) {
     FLAGS_logbufsecs = 0;
     FLAGS_max_log_size = 100;
     FLAGS_stop_logging_if_full_disk = true;
+}
+
+int main(int argc, char **argv) {
+    std::string base_dir = ros::package::getPath("path_optimizer_2");
+    initLog(argv, base_dir); 
+
+    ros::init(argc, argv, "path_optimization");
+    ros::NodeHandle nh("~");
+    std::string image_file = "gridmap.png";    
+    nh.getParam("image", image_file);
 
     // Initialize grid map from image.
     std::string image_dir = ros::package::getPath("path_optimizer_2");
-    std::string image_file = "gridmap.png";
-    image_dir.append("/" + image_file);
+    image_dir.append("/img/" + image_file);
+    LOG(INFO)<<"image_dir:"<<image_dir;
+
     cv::Mat img_src = cv::imread(image_dir, CV_8UC1);
     double resolution = 0.2;  // in meter
     grid_map::GridMap grid_map(std::vector<std::string>{"obstacle", "distance"});

@@ -56,8 +56,8 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} glog gflags ${catkin_LIBRARIES} OsqpEigen::OsqpEigen osqp::osqp
         )
 
-add_executable(${PROJECT_NAME}_demo
-        src/test/demo.cpp)
-target_link_libraries(${PROJECT_NAME}_demo
-        ${PROJECT_NAME} ${OpenCV_LIBRARIES}
-        )
+add_executable(${PROJECT_NAME}_demo src/test/demo.cpp)
+target_link_libraries(${PROJECT_NAME}_demo ${PROJECT_NAME} ${OpenCV_LIBRARIES} )
+
+add_executable(${PROJECT_NAME}_demo2 src/test/demo2.cpp)
+target_link_libraries(${PROJECT_NAME}_demo2 ${PROJECT_NAME} ${OpenCV_LIBRARIES} )

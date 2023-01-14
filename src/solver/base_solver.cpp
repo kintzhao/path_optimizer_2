@@ -247,10 +247,10 @@ void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,
         }
     }
     // End state.
-    (*lower_bound)(end_state_idx) = -1.0; //-OsqpEigen::INFTY;
-    (*upper_bound)(end_state_idx) = 1.0; //OsqpEigen::INFTY;
-    (*lower_bound)(end_state_idx + 1) = -OsqpEigen::INFTY;
-    (*upper_bound)(end_state_idx + 1) = OsqpEigen::INFTY;
+    (*lower_bound)(end_state_idx) = 0.0;//-1.0; //-OsqpEigen::INFTY;
+    (*upper_bound)(end_state_idx) = 0.0;//1.0; //OsqpEigen::INFTY;
+    (*lower_bound)(end_state_idx + 1) = 0.0;//-OsqpEigen::INFTY;
+    (*upper_bound)(end_state_idx + 1) = 0.0;//OsqpEigen::INFTY;
     if (FLAGS_constraint_end_heading && reference_path_.isBlocked() == nullptr) {
         double end_psi = constrainAngle(vehicle_state_.getTargetState().heading - ref_states.back().heading);
         if (end_psi < 70 * M_PI / 180) {
