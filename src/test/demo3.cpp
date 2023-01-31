@@ -143,8 +143,8 @@ namespace grid_map
     occupancyGrid.header.stamp.fromNSec(gridMap.getTimestamp());
     occupancyGrid.info.map_load_time = occupancyGrid.header.stamp;  // Same as header stamp as we do not load the map.
     occupancyGrid.info.resolution = gridMap.getResolution();
-    occupancyGrid.info.width = gridMap.getSize()(1);
-    occupancyGrid.info.height = gridMap.getSize()(0);
+    occupancyGrid.info.width = gridMap.getSize()(0);
+    occupancyGrid.info.height = gridMap.getSize()(1);
     Position position = gridMap.getPosition();// - 0.5 * gridMap.getLength().matrix();
     occupancyGrid.info.origin.position.x = position.x();
     occupancyGrid.info.origin.position.y = position.y();
@@ -159,8 +159,8 @@ namespace grid_map
     Matrix map_cells = gridMap.get(layer);
     //LOG(INFO) << "cols:" <<map_cells.cols()<<" rows:"<< map_cells.rows();
 
-    int height = map_cells.rows();
-    int width = map_cells.cols();
+    int height = map_cells.cols();//map_cells.rows();
+    int width = map_cells.rows();//map_cells.cols();
     const float cellMin = 0;
     const float cellMax = 100;
     const float cellRange = cellMax - cellMin;    
@@ -403,6 +403,7 @@ int main(int argc, char **argv)
       }
       visualization_msgs::Marker result_marker =
           markers.newLineStrip(0.5, "optimized path", id++, path_color, marker_frame_id);
+      LOG(INFO)<<"result_path: "<<result_path.size();          
       for (size_t i = 0; i != result_path.size(); ++i)
       {
         geometry_msgs::Point p;
@@ -421,6 +422,7 @@ int main(int argc, char **argv)
     {
       visualization_msgs::Marker result_boxes_marker =
           markers.newLineStrip(0.15, "optimized path by boxes", id++, ros_viz_tools::BLACK, marker_frame_id);
+      LOG(INFO)<<"result_path_by_boxes: "<<result_path_by_boxes.size();          
       for (size_t i = 0; i != result_path_by_boxes.size(); ++i)
       {
         geometry_msgs::Point p;
@@ -439,6 +441,7 @@ int main(int argc, char **argv)
                                id++,
                                ros_viz_tools::YELLOW,
                                marker_frame_id);
+      LOG(INFO)<<"smoothed_reference_path: "<<smoothed_reference_path.size();
       for (size_t i = 0; i != smoothed_reference_path.size(); ++i)
       {
         geometry_msgs::Point p;
@@ -460,6 +463,7 @@ int main(int argc, char **argv)
       static const double width{FLAGS_car_width};
       static const double rear_d{FLAGS_rear_length};
       static const double front_d{FLAGS_front_length};
+      LOG(INFO)<<"result_path: "<<result_path.size();         
       for (size_t i = 0; i != result_path.size(); ++i)
       {
         double heading = result_path[i].heading;
