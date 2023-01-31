@@ -64,3 +64,6 @@ target_link_libraries(${PROJECT_NAME}_demo2 ${PROJECT_NAME} ${OpenCV_LIBRARIES} 
 
 add_executable(${PROJECT_NAME}_demo3 src/test/demo3.cpp)
 target_link_libraries(${PROJECT_NAME}_demo3 ${PROJECT_NAME} ${OpenCV_LIBRARIES} )
+
+add_executable(${PROJECT_NAME}_demo4 src/test/demo4.cpp)
+target_link_libraries(${PROJECT_NAME}_demo4 ${PROJECT_NAME} ${OpenCV_LIBRARIES} )

@@ -9,6 +9,7 @@ Panels:
         - /Map1
         - /MarkerArray1
         - /MarkerArray1/Namespaces1
+        - /Axes1
       Splitter Ratio: 0.3246527910232544
     Tree Height: 728
   - Class: rviz/Selection
@@ -53,7 +54,6 @@ Visualization Manager:
       Name: MarkerArray
       Namespaces:
         end point: true
-        reference point: true
         start point: true
       Queue Size: 100
       Value: true
@@ -61,17 +61,17 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /map
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Class: rviz/Axes
       Enabled: true
-      Length: 1
+      Length: 10
       Name: Axes
-      Radius: 0.10000000149011612
+      Radius: 0.5
       Reference Frame: <Fixed Frame>
       Value: true
   Enabled: true
@@ -101,7 +101,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: 0.009999999776482582
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -111,11 +111,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 50.17351531982422
+      Scale: 4.606453895568848
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 5.996394157409668
-      Y: -4.625622272491455
+      X: 24.31751251220703
+      Y: 2.0947060585021973
     Saved: ~
 Window Geometry:
   Displays:
