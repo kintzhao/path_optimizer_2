@@ -44,17 +44,6 @@ double resolution = 0.05;//0.2; // in meter
 unsigned char OCCUPY = 0;
 unsigned char FREE = 255;  
 grid_map::GridMap grid_map_(std::vector<std::string>{"obstacle", "distance"});
- 
-float transform_x = 0.0;
-float transform_y = 0.0;
-/* path  transform
-  transform_x = ox - oy;
-  transform_y = ox + oy;
-
-  x = transform_x + y;
-  y = transform_y - x
-
-*/
 
 //reference_path_plot
 void referenceCb(const geometry_msgs::PointStampedConstPtr &p)
@@ -198,26 +187,29 @@ namespace grid_map
 void mapCb(const nav_msgs::OccupancyGridConstPtr &map)
 {
   LOG(INFO) <<"mapCb1 W:"<< map->info.width<< "  H:" <<map->info.height<< std::endl;  
-  cv::Mat im_m( map->info.height, map->info.width, CV_8UC1, cv::Scalar(0));
-  LOG(INFO) <<" => cols:"<< im_m.cols<< " rows:" <<im_m.rows<< std::endl;    
-   
-	int height = im_m.rows;
-	int width = im_m.cols;
-  for (int row = 0; row < height; row++) {
-		for (int col = 0; col < width; col++) {
+  cv::Mat im_m(map->info.width,  map->info.height, CV_8UC1, cv::Scalar(0));
+  LOG(INFO) <<" =>img cols:"<< im_m.cols<< " rows:" <<im_m.rows<< std::endl;    
+  //cv::rotate(im_m, im_m, cv::ROTATE_90_COUNTERCLOCKWISE);
+
+	int height = map->info.height;
+	int width = map->info.width;
+  for (int row = 0; row < height; row++) 
+  {
+		for (int col = 0; col < width; col++) 
+    {
       //uchar value = map->data[(map->info.height - row - 1) * map->info.width + col];
       uchar value = map->data[(height - row - 1) * width + col];      
 			if(value >=0 && value <= 25)
       {
-        im_m.at<uchar>(row, col) = 254;
+        im_m.at<uchar>(col, row) = 254;
       }
       else if(value >=65 && value <= 100)
       {
-        im_m.at<uchar>(row, col) = 0;
+        im_m.at<uchar>(col, row) = 0;
       }
       else
       {
-			  im_m.at<uchar>(row, col) = 205;
+			  im_m.at<uchar>(col, row) = 205;
       }
 		}
 	} 
@@ -235,12 +227,8 @@ void mapCb(const nav_msgs::OccupancyGridConstPtr &map)
   {
     //grid_map::GridMapCvConverter::initializeFromImage(im_m, resolution, grid_map_, 
     //                        grid_map::Position(map->info.origin.position.x, map->info.origin.position.y));
-    float ox = map->info.origin.position.x + 0.5*map->info.width*map->info.resolution;
-    float oy = map->info.origin.position.y + 0.5*map->info.height*map->info.resolution;
-    transform_x = ox-oy;
-    transform_y = ox+oy;    
-    grid_map::GridMapCvConverter::initializeFromImage(im_m, resolution, grid_map_,  
-                            grid_map::Position(ox, oy));                            
+    grid_map::GridMapCvConverter::initializeFromImage(im_m, resolution, grid_map_, 
+                            grid_map::Position(0.0, 0.0));
     LOG(INFO) << "getPosition  x:" <<grid_map_.getPosition().x()<<" y:"<< grid_map_.getPosition().y()<< std::endl;                               
     // Add obstacle layer.
     grid_map::GridMapCvConverter::addLayerFromImage<unsigned char, 1>(im_m, "obstacle", grid_map_, OCCUPY, FREE, 0.5);
