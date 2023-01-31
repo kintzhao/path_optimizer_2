@@ -7,33 +7,33 @@
 
 ///// Car params.
 /////
-DEFINE_double(car_width, 2.0, "");
+// DEFINE_double(car_width, 2.0, "");
 
-DEFINE_double(car_length, 4.9, "");
-
-DEFINE_double(safety_margin, 0.3, "mandatory safety margin");
-
-DEFINE_double(wheel_base, 2.5, "wheel base");
-
-DEFINE_double(rear_length, -1.0, "rear axle to rear edge");
-
-DEFINE_double(front_length, 3.9, "rear axle to front edge");
-
-DEFINE_double(max_steering_angle, 35.0 * M_PI / 180.0, "");
-
-// DEFINE_double(car_width, 0.46, "");
-
-// DEFINE_double(car_length, 0.56, "");
+// DEFINE_double(car_length, 4.9, "");
 
 // DEFINE_double(safety_margin, 0.3, "mandatory safety margin");
 
-// DEFINE_double(wheel_base, 0.4, "wheel base");
+// DEFINE_double(wheel_base, 2.5, "wheel base");
 
-// DEFINE_double(rear_length, -0.28, "rear axle to rear edge");
+// DEFINE_double(rear_length, -1.0, "rear axle to rear edge");
 
-// DEFINE_double(front_length, 0.28, "rear axle to front edge");
+// DEFINE_double(front_length, 3.9, "rear axle to front edge");
 
-// DEFINE_double(max_steering_angle, 100.0 * M_PI / 180.0, "");
+// DEFINE_double(max_steering_angle, 35.0 * M_PI / 180.0, "");
+
+DEFINE_double(car_width, 0.46, "");
+
+DEFINE_double(car_length, 0.56, "");
+
+DEFINE_double(safety_margin, 0.1, "mandatory safety margin");
+
+DEFINE_double(wheel_base, 0.4, "wheel base");
+
+DEFINE_double(rear_length, -0.26, "rear axle to rear edge");
+
+DEFINE_double(front_length, 0.26, "rear axle to front edge");
+
+DEFINE_double(max_steering_angle, 89.0 * M_PI / 180.0, "");
 
 /////
 
@@ -50,11 +50,11 @@ DEFINE_string(tension_solver, "OSQP", "solver used in tension smoothing method")
 
 DEFINE_bool(enable_searching, true, "search before optimization");
 
-DEFINE_double(search_lateral_range, 10.0, "max offset when searching");
+DEFINE_double(search_lateral_range, 1.2, "max offset when searching");
 
-DEFINE_double(search_longitudial_spacing, 1.5, "longitudinal spacing when searching");
+DEFINE_double(search_longitudial_spacing, 0.1, "longitudinal spacing when searching");
 
-DEFINE_double(search_lateral_spacing, 0.6, "lateral spacing when searching");
+DEFINE_double(search_lateral_spacing, 0.05, "lateral spacing when searching");
 
 // TODO: change names!
 DEFINE_double(frenet_angle_diff_weight, 1500, "frenet smoothing angle difference weight");
@@ -107,7 +107,7 @@ DEFINE_double(KP_deviation_weight, 0, "deviation weight of solver KP and KPC");
 
 DEFINE_double(KP_slack_weight, 3, "punish distance to obstacles");
 
-DEFINE_double(expected_safety_margin, 0.6, "soft constraint on the distance to obstacles");
+DEFINE_double(expected_safety_margin, 0.15, "soft constraint on the distance to obstacles");
 
 // TODO: make this work.
 DEFINE_bool(constraint_end_heading, true, "add constraints on end heading");
@@ -118,7 +118,7 @@ DEFINE_bool(enable_exact_position, false, "force the path to reach the exact goa
 
 ///// Others.
 /////
-DEFINE_double(output_spacing, 0.3, "output interval");
+DEFINE_double(output_spacing, 0.075, "output interval");
 
 DEFINE_double(epsilon, 1e-6, "use this when comparing double");
 
@@ -126,5 +126,5 @@ DEFINE_bool(enable_dynamic_segmentation, true, "dense segmentation when the curv
 
 DEFINE_bool(rough_constraints_far_away, false, "Use rough collision constraints after some distance, controlled by precise_planning_length");
 
-DEFINE_double(precise_planning_length, 30.0, "More strict collision constraint.");
+DEFINE_double(precise_planning_length, 7.5, "More strict collision constraint.");
 /////

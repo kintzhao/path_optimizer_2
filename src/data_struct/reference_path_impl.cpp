@@ -86,11 +86,13 @@ const std::vector<VehicleStateBound> &ReferencePathImpl::getBounds() const {
 }
 
 void ReferencePathImpl::logBoundsInfo() const {
+    static int index=0;
     for (const auto &bound : bounds_) {
         const auto &front = bound.front;
         const auto &rear = bound.rear;
-        LOG(INFO) << "front: (" << front.x << ", " << front.y << "), bound: (" << front.lb << ", " << front.ub << ").";
-        LOG(INFO) << "rear: (" << rear.x << ", " << rear.y << "), bound: (" << rear.lb << ", " << rear.ub << ").";
+        LOG(INFO) <<"i:"<<index<< " front: (" << front.x << ", " << front.y << "), bound: (" << front.lb << ", " << front.ub << ").";
+        LOG(INFO) <<"i:"<<index<< " rear: (" << rear.x << ", " << rear.y << "), bound: (" << rear.lb << ", " << rear.ub << ").";
+        index++;
     }
 }
 
@@ -234,12 +236,12 @@ std::vector<double> ReferencePathImpl::getClearanceWithDirectionStrict(const Pat
     // TODO: too much repeated code!
     double left_bound = 0;
     double right_bound = 0;
-    double delta_s = 0.3;
+    double delta_s = 0.05;//0.3;
     double left_angle = constrainAngle(state.heading + M_PI_2);
     double right_angle = constrainAngle(state.heading - M_PI_2);
-    static auto search_radius = 0.5;
+    static auto search_radius = 0.3;//0.5;
 
-    auto n = static_cast<size_t >(6.0 / delta_s);
+    auto n = static_cast<size_t >(2.0 / delta_s);
     // Check if the original position is collision free.
     grid_map::Position original_position(state.x, state.y);
     auto original_clearance = map.getObstacleDistance(original_position);

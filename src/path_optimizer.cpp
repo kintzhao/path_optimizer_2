@@ -145,7 +145,7 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
     // Solve with soft collision constraints.
     time_recorder.recordTime("Pre solving");
     if (!solver.solve(final_path)) {
-        LOG(ERROR) << "Pre solving failed!";
+        LOG(ERROR) << "====>>> Pre solving failed!";
         reference_path_->logBoundsInfo();
         return false;
     }

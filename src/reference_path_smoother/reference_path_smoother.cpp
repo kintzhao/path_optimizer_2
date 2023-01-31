@@ -150,7 +150,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
     double tmp_s = getProjection(x_s, y_s, start_state_.x, start_state_.y, reference->getLength()).s;
     layers_s_list_.clear();
     layers_bounds_.clear();
-    double search_ds = reference->getLength() > 6 ? FLAGS_search_longitudial_spacing : 0.5;
+    double search_ds = reference->getLength() > 1.5 ? FLAGS_search_longitudial_spacing : 0.05;
     while (tmp_s < reference->getLength()) {
         layers_s_list_.emplace_back(tmp_s);
         tmp_s += search_ds;
@@ -164,7 +164,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
     auto vehicle_local = global2Local(proj_point, start_state_);
     vehicle_l_wrt_smoothed_ref_ = vehicle_local.y;
     if (fabs(vehicle_local.y) > FLAGS_search_lateral_range) {
-        LOG(INFO) << "Vehicle far from ref, quit graph search.";
+        LOG(WARNING) << "Vehicle far from ref, quit graph search.";
         return false;
     }
     int start_lateral_index =
@@ -172,7 +172,9 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
 
     std::vector<std::vector<DpPoint>> samples;
     samples.reserve(layers_s_list_.size());
-    static const double search_threshold = FLAGS_car_width / 2.0 + 0.2;
+    static const double search_threshold = FLAGS_car_width / 2.0 + 0.05;
+    LOG(INFO) << "Vehicle search_threshold:"<<search_threshold;  
+  
     // Sample nodes.
     for (int i = 0; i < layers_s_list_.size(); ++i) {
         samples.emplace_back(std::vector<DpPoint>());
@@ -253,10 +255,10 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
         if (ptr->layer_index == 0) {
             layers_bounds_.emplace_back(-10, 10);
         } else {
-            static const double check_s = 0.2;
+            static const double check_s = 0.05;//0.2;
             double upper_bound = check_s + ptr->rough_upper_bound;
             double lower_bound = -check_s + ptr->rough_lower_bound;
-            static const double check_limit = 6.0;
+            static const double check_limit = 1.5;//6.0;
             double ref_x = x_s(ptr->s);
             double ref_y = y_s(ptr->s);
             while (upper_bound < check_limit) {
@@ -497,8 +499,8 @@ void ReferencePathSmoother::bSpline() {
     }
     int degree = 3;
     double average_length = length / (input_points_.size() - 1);
-    if (average_length > 10) degree = 3;
-    else if (average_length > 5) degree = 4;
+    if (average_length > 4.5) degree = 3;
+    else if (average_length > 2.25) degree = 4;
     else degree = 5;
     tinyspline::BSpline b_spline_raw(input_points_.size(), 2, degree);
     std::vector<tinyspline::real> ctrlp_raw = b_spline_raw.controlPoints();
@@ -508,7 +510,7 @@ void ReferencePathSmoother::bSpline() {
         ctrlp_raw[2 * (i) + 1] = input_points_[i].y;
     }
     b_spline_raw.setControlPoints(ctrlp_raw);
-    double delta_t = 1.0 / length;
+    double delta_t = 0.1 / length ; //1.0 / length ;
     LOG(INFO)<<"BSpline length:"<<length<<" delta_t:"<<delta_t;    
     double tmp_t = 0;
     while (tmp_t < 1) {

@@ -37,8 +37,13 @@
 PathOptimizationNS::State start_state, end_state;
 std::vector<PathOptimizationNS::State> reference_path_plot;
 PathOptimizationNS::ReferencePath reference_path_opt;
-bool start_state_rcv = false, end_state_rcv = false, reference_rcv = false;
+bool start_state_rcv = false, end_state_rcv = false, reference_rcv = false, map_rcv = false;
 bool has_opt = false;
+
+double resolution = 0.05;//0.2; // in meter
+unsigned char OCCUPY = 0;
+unsigned char FREE = 255;  
+grid_map::GridMap grid_map_(std::vector<std::string>{"obstacle", "distance"});
 
 //reference_path_plot
 void referenceCb(const geometry_msgs::PointStampedConstPtr &p)
@@ -53,7 +58,7 @@ void referenceCb(const geometry_msgs::PointStampedConstPtr &p)
   reference_path_plot.emplace_back(reference_point);
   start_state_rcv = end_state_rcv = false;
   reference_rcv = reference_path_plot.size() >= 6;
-  std::cout << "received a reference point" << std::endl;
+  LOG(INFO) << "==>>>> received a reference point" << std::endl;
 }
 //start_state
 void startCb(const geometry_msgs::PoseWithCovarianceStampedConstPtr &start)
@@ -65,7 +70,7 @@ void startCb(const geometry_msgs::PoseWithCovarianceStampedConstPtr &start)
   {
     start_state_rcv = true;
   }
-  LOG(INFO) << "get initial state." << std::endl;
+  LOG(INFO) << "==>>>> get initial state." << std::endl;
 }
 //end_state
 void goalCb(const geometry_msgs::PoseStampedConstPtr &goal)
@@ -77,7 +82,162 @@ void goalCb(const geometry_msgs::PoseStampedConstPtr &goal)
   {
     end_state_rcv = true;
   }
-  LOG(INFO) << "get the goal." << std::endl;
+  LOG(INFO) << "==>>>> get the goal." << std::endl;
+}
+
+namespace grid_map
+{
+  bool fromOccupancyGrid(const nav_msgs::OccupancyGrid &occupancyGrid,
+                         const std::string &layer, grid_map::GridMap &gridMap)
+  {
+    const Size size(occupancyGrid.info.width, occupancyGrid.info.height);
+    const double resolution = occupancyGrid.info.resolution;
+    const Length length = resolution * size.cast<double>();
+    const std::string &frameId = occupancyGrid.header.frame_id;
+    Position position(occupancyGrid.info.origin.position.x, occupancyGrid.info.origin.position.y);
+    // Different conventions of center of map.
+    position += 0.5 * length.matrix();
+
+    const auto &orientation = occupancyGrid.info.origin.orientation;
+    if (orientation.w != 1.0 && !(orientation.x == 0 && orientation.y == 0 && orientation.z == 0 && orientation.w == 0))
+    {
+      ROS_WARN_STREAM("Conversion of occupancy grid: Grid maps do not support orientation.");
+      ROS_INFO_STREAM("Orientation of occupancy grid: " << std::endl
+                                                        << occupancyGrid.info.origin.orientation);
+      return false;
+    }
+
+    if (static_cast<size_t>(size.prod()) != occupancyGrid.data.size())
+    {
+      ROS_WARN_STREAM("Conversion of occupancy grid: Size of data does not correspond to width * height.");
+      return false;
+    }
+
+    // TODO: Split to `initializeFrom` and `from` as for Costmap2d.
+    if ((gridMap.getSize() != size).any() || gridMap.getResolution() != resolution || (gridMap.getLength() != length).any() || gridMap.getPosition() != position || gridMap.getFrameId() != frameId || !gridMap.getStartIndex().isZero())
+    {
+      gridMap.setTimestamp(occupancyGrid.header.stamp.toNSec());
+      gridMap.setFrameId(frameId);
+      gridMap.setGeometry(length, resolution, position);
+    }
+
+    // Reverse iteration is required because of different conventions
+    // between occupancy grid and grid map.
+    grid_map::Matrix data(size(0), size(1));
+    for (std::vector<int8_t>::const_reverse_iterator iterator = occupancyGrid.data.rbegin();
+         iterator != occupancyGrid.data.rend(); ++iterator)
+    {
+      size_t i = std::distance(occupancyGrid.data.rbegin(), iterator);
+      data(i) = *iterator != -1 ? (100 - *iterator) : 50; //NAN;
+    }
+
+    gridMap.add(layer, data);
+    return true;
+  }
+
+  void toOccupancyGrid(const grid_map::GridMap& gridMap,
+                         const std::string& layer, float dataMin, float dataMax,
+                         nav_msgs::OccupancyGrid& occupancyGrid)
+  {
+    occupancyGrid.header.frame_id = gridMap.getFrameId();
+    occupancyGrid.header.stamp.fromNSec(gridMap.getTimestamp());
+    occupancyGrid.info.map_load_time = occupancyGrid.header.stamp;  // Same as header stamp as we do not load the map.
+    occupancyGrid.info.resolution = gridMap.getResolution();
+    occupancyGrid.info.width = gridMap.getSize()(1);
+    occupancyGrid.info.height = gridMap.getSize()(0);
+    Position position = gridMap.getPosition();// - 0.5 * gridMap.getLength().matrix();
+    occupancyGrid.info.origin.position.x = position.x();
+    occupancyGrid.info.origin.position.y = position.y();
+    occupancyGrid.info.origin.position.z = 0.0;
+    occupancyGrid.info.origin.orientation.x = 0.0;
+    occupancyGrid.info.origin.orientation.y = 0.0;
+    occupancyGrid.info.origin.orientation.z = 0.0;
+    occupancyGrid.info.origin.orientation.w = 1.0;
+    size_t nCells = gridMap.getSize().prod();
+    occupancyGrid.data.resize(nCells);
+    //LOG(INFO) << "gridMap:" <<gridMap.getSize()(0)<<" "<< gridMap.getSize()(1)<<" nCells:"<< gridMap.getSize().prod()<< std::endl;
+    Matrix map_cells = gridMap.get(layer);
+    //LOG(INFO) << "cols:" <<map_cells.cols()<<" rows:"<< map_cells.rows();
+
+    int height = map_cells.rows();
+    int width = map_cells.cols();
+    const float cellMin = 0;
+    const float cellMax = 100;
+    const float cellRange = cellMax - cellMin;    
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width; col++) {
+        uchar cell_value = map_cells(height - row - 1, col);    
+        float value = (cell_value - dataMin) / (dataMax - dataMin);
+        if (isnan(value))
+          value = -1;
+        else
+          value = cellMin + std::min(std::max(0.0f, value), 1.0f) * cellRange;          
+        occupancyGrid.data[row*width + col] = (uchar)value;
+      }
+    } 
+    //LOG(INFO) << "Finish occupancyGrid ";
+  }
+
+
+}
+
+
+//map
+void mapCb(const nav_msgs::OccupancyGridConstPtr &map)
+{
+  LOG(INFO) <<"mapCb1 W:"<< map->info.width<< "  H:" <<map->info.height<< std::endl;  
+  cv::Mat im_m( map->info.height, map->info.width, CV_8UC1, cv::Scalar(0));
+  LOG(INFO) <<" => cols:"<< im_m.cols<< " rows:" <<im_m.rows<< std::endl;    
+   
+	int height = im_m.rows;
+	int width = im_m.cols;
+  for (int row = 0; row < height; row++) {
+		for (int col = 0; col < width; col++) {
+      //uchar value = map->data[(map->info.height - row - 1) * map->info.width + col];
+      uchar value = map->data[(height - row - 1) * width + col];      
+			if(value >=0 && value <= 25)
+      {
+        im_m.at<uchar>(row, col) = 254;
+      }
+      else if(value >=65 && value <= 100)
+      {
+        im_m.at<uchar>(row, col) = 0;
+      }
+      else
+      {
+			  im_m.at<uchar>(row, col) = 205;
+      }
+		}
+	} 
+  
+	// cv::Mat im_m = cv::Mat(map->data).clone();//将vector变成单列的mat，这里需要clone(),因为这里的赋值操作是浅拷贝
+	// cv::Mat dest = im_m.reshape(1, map->info.height);
+   LOG(INFO) << "mapCb2:" << std::endl;  
+	// imshow("output", im_m);  
+   cv::imwrite("/tmp/0cc_map.png", im_m);
+  // cv::waitKey();
+  // return ;
+
+
+  //add obstacle layer and distance layer.
+  {
+    grid_map::GridMapCvConverter::initializeFromImage(im_m, resolution, grid_map_, 
+                            grid_map::Position(map->info.origin.position.x, map->info.origin.position.y));
+    LOG(INFO) << "getPosition  x:" <<grid_map_.getPosition().x()<<" y:"<< grid_map_.getPosition().y()<< std::endl;                               
+    // Add obstacle layer.
+    grid_map::GridMapCvConverter::addLayerFromImage<unsigned char, 1>(im_m, "obstacle", grid_map_, OCCUPY, FREE, 0.5);
+    // Update distance layer.
+    Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> binary = grid_map_.get("obstacle").cast<unsigned char>();
+    cv::distanceTransform(eigen2cv(binary), eigen2cv(grid_map_.get("distance")), CV_DIST_L2, CV_DIST_MASK_PRECISE);
+    grid_map_.get("distance") *= resolution;
+    grid_map_.setFrameId("/map");
+    
+    cv::imwrite("/tmp/obstacle_map.png", eigen2cv(grid_map_.get("obstacle")));
+    cv::imwrite("/tmp/distance_map.png", eigen2cv(grid_map_.get("distance")));
+  }
+ 
+  LOG(INFO) << "mapCb3:" << std::endl;
+  map_rcv =  true;
 }
 
 void initLog(char **argv, const std::string &base_dir)
@@ -98,6 +258,7 @@ void initLog(char **argv, const std::string &base_dir)
   FLAGS_stop_logging_if_full_disk = true;
 }
 
+
 int main(int argc, char **argv)
 {
   std::string base_dir = ros::package::getPath("path_optimizer_2");
@@ -107,39 +268,14 @@ int main(int argc, char **argv)
   ros::NodeHandle nh("~");
   std::string image_file = "gridmap.png";
   nh.getParam("image", image_file);
-
-  // Initialize grid map from image.
-  std::string image_dir = ros::package::getPath("path_optimizer_2");
-  image_dir.append("/img/" + image_file);
-  LOG(INFO) << "image_dir:" << image_dir;
-
-  cv::Mat img_src = cv::imread(image_dir, CV_8UC1);
-  double resolution = 0.05;//0.2; // in meter
-  unsigned char OCCUPY = 0;
-  unsigned char FREE = 255;  
-  grid_map::GridMap grid_map(std::vector<std::string>{"obstacle", "distance"});
-  LOG(INFO) << "img_src  rows:" <<img_src.rows<<" cols:"<< img_src.cols<< std::endl;     
-  //add obstacle layer and distance layer.
-  {
-    grid_map::GridMapCvConverter::initializeFromImage(img_src, resolution, grid_map, grid_map::Position::Zero());
-    //grid_map::GridMapCvConverter::initializeFromImage(img_src, resolution, grid_map, grid_map::Position(-50, -50));
-    // Add obstacle layer.
-    grid_map::GridMapCvConverter::addLayerFromImage<unsigned char, 1>(img_src, "obstacle", grid_map, OCCUPY, FREE, 0.5);
-    // Update distance layer.
-    Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> binary = grid_map.get("obstacle").cast<unsigned char>();
-    cv::distanceTransform(eigen2cv(binary), eigen2cv(grid_map.get("distance")), CV_DIST_L2, CV_DIST_MASK_PRECISE);
-    grid_map.get("distance") *= resolution;
-    grid_map.setFrameId("/map");
-    cv::imwrite("/tmp/obstacle_map.png", eigen2cv(grid_map.get("obstacle")));
-    cv::imwrite("/tmp/distance_map.png", eigen2cv(grid_map.get("distance")));
-  }
-
+ 
   // Set publishers.
   ros::Publisher map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("grid_map", 1, true);
   // Set subscribers.
   ros::Subscriber reference_sub = nh.subscribe("/clicked_point", 1, referenceCb);
   ros::Subscriber start_sub = nh.subscribe("/initialpose", 1, startCb);
   ros::Subscriber end_sub = nh.subscribe("/move_base_simple/goal", 1, goalCb);
+  ros::Subscriber map_sub = nh.subscribe("/map", 1, mapCb);
 
   // Markers initialization.
   ros_viz_tools::RosVizTools markers(nh, "markers");
@@ -224,11 +360,11 @@ int main(int argc, char **argv)
     std::vector<std::vector<double>> a_star_display(3);
     bool opt_ok = false;
     LOG(INFO) << " reference_rcv:" << reference_rcv<< " start_state_rcv:" << start_state_rcv<< " end_state_rcv:" << end_state_rcv;          
-    if (/* !has_opt && */ reference_rcv && start_state_rcv && end_state_rcv)
+    if (/* !has_opt && */ reference_rcv && start_state_rcv && end_state_rcv && map_rcv)
     {
       has_opt = true;
       LOG(INFO) << "start PathOptimizer, end_state_rcv:" << end_state_rcv;      
-      PathOptimizationNS::PathOptimizer path_optimizer(start_state, end_state, grid_map);
+      PathOptimizationNS::PathOptimizer path_optimizer(start_state, end_state, grid_map_);
       opt_ok = path_optimizer.solve(reference_path_plot, &result_path);
       reference_path_opt = path_optimizer.getReferencePath();
       smoothed_reference_path.clear();
@@ -247,7 +383,12 @@ int main(int argc, char **argv)
       }
       LOG(INFO) << "start PathOptimizer, opt_ok:" << opt_ok;  
     }
-
+    if(!map_rcv)
+    {
+      ros::spinOnce();
+      rate.sleep();
+      continue;
+    }
     // Visualize result path.
     {
       ros_viz_tools::ColorRGBA path_color;
@@ -437,11 +578,12 @@ int main(int argc, char **argv)
     }
 
     // Publish the grid_map.
-    grid_map.setTimestamp(time.toNSec());
+    grid_map_.setTimestamp(time.toNSec());
     nav_msgs::OccupancyGrid message;
-    grid_map::GridMapRosConverter::toOccupancyGrid(grid_map, "obstacle", FREE, OCCUPY, message);
+    //grid_map::GridMapRosConverter::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);
+    grid_map::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);    
     map_publisher.publish(message);
-    LOG(INFO) << "message  H:" <<message.info.height<<" W:"<< message.info.width<< std::endl;  
+    //LOG(INFO) << "message  H:" <<message.info.height<<" W:"<< message.info.width<< std::endl;  
     // Publish markers.
     markers.publish();
     LOG_EVERY_N(INFO, 20) << "map published.";
