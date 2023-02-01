@@ -37,7 +37,8 @@ bool ReferencePathSmoother::solve(std::shared_ptr<PathOptimizationNS::ReferenceP
         return false;
     }
     LOG(INFO)<<" bSpline"; 
-    bSpline();
+    //bSpline();
+    path2st();
     LOG(INFO)<<" smooth"; 
     if (!smooth(reference_path)) return false;
     LOG(INFO)<<" graphSearchDp";
@@ -529,6 +530,25 @@ void ReferencePathSmoother::bSpline() {
         double dis = sqrt(pow(x_list_[i] - x_list_[i - 1], 2) + pow(y_list_[i] - y_list_[i - 1], 2));
         s_list_.emplace_back(s_list_.back() + dis);
     }
+}
+
+void ReferencePathSmoother::path2st() {
+    // B spline smoothing.
+    double length = 0;
+    for (size_t i = 0; i != input_points_.size() - 1; ++i) {
+      x_list_.emplace_back(input_points_[i].x);
+      y_list_.emplace_back(input_points_[i].y);      
+      length += distance(input_points_[i], input_points_[i + 1]);
+    }
+    LOG(INFO)<<"path2st length:"<<length;    
+    s_list_.emplace_back(0);
+    LOG(INFO)<<" x_list_size:"<<x_list_.size();
+
+    for (size_t i = 1; i != x_list_.size(); ++i) {
+        double dis = sqrt(pow(x_list_[i] - x_list_[i - 1], 2) + pow(y_list_[i] - y_list_[i - 1], 2));
+        s_list_.emplace_back(s_list_.back() + dis);
+    }
+    LOG(INFO)<<" s_list_:"<<s_list_.size();
 }
 
 bool ReferencePathSmoother::postSmooth(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path) {

@@ -1,3 +1,13 @@
+ roslaunch path_optimizer_2 demo4.launch 
+ 
+  ```
+
+  ros::Subscriber map_sub = nh.subscribe("/map", 1, mapCb);
+  ros::Subscriber path_sub_ = nh.subscribe("/move_base/GlobalPlanner/plan", 2, pathCb);
+  ```
+
+
+
 # path_optimizer_2
 ![](https://img.shields.io/badge/ROS-Kinetic-orange)  ![](https://img.shields.io/badge/ROS-Melodic-blue)     
 **This is a newer version of my path planning ROS package for autonomous driving vehicles 👉[path_optimizer](https://github.com/LiJiangnanBit/path_optimizer).**  

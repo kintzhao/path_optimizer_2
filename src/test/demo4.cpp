@@ -12,6 +12,8 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <nav_msgs/Path.h>
+
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
@@ -31,11 +33,12 @@
 #include "data_struct/reference_path.hpp"
 #include "tools/spline.h"
 #include "config/planning_flags.hpp"
-
+#include <math.h>
 // TODO: this file is a mess.
 
 PathOptimizationNS::State start_state, end_state;
 std::vector<PathOptimizationNS::State> reference_path_plot;
+std::vector<PathOptimizationNS::State> ref_path_plot;
 PathOptimizationNS::ReferencePath reference_path_opt;
 bool start_state_rcv = false, end_state_rcv = false, reference_rcv = false, map_rcv = false;
 bool has_opt = false;
@@ -47,14 +50,44 @@ grid_map::GridMap grid_map_(std::vector<std::string>{"obstacle", "distance"});
  
 float transform_x = 0.0;
 float transform_y = 0.0;
+
 /* path  transform
   transform_x = ox - oy;
   transform_y = ox + oy;
 
   x = transform_x + y;
   y = transform_y - x
-
+  heading = heading - M_PI/2
 */
+
+void pathCb(const nav_msgs::Path::ConstPtr path)
+{
+  ref_path_plot.clear();
+  for(int i=0; i<path->poses.size(); i++)
+  {
+    PathOptimizationNS::State reference_point;
+    reference_point.x = transform_x + path->poses[i].pose.position.y;
+    reference_point.y = transform_y - path->poses[i].pose.position.x;
+    reference_point.heading = tf::getYaw(path->poses[i].pose.orientation) - M_PI_2;
+    ref_path_plot.emplace_back(reference_point);
+  }
+  
+  start_state = ref_path_plot.front();
+  end_state = ref_path_plot.back();
+
+  if (map_rcv )
+  {
+    reference_rcv = true;
+    start_state_rcv = true;  
+    end_state_rcv = true;      
+  }
+  if(ref_path_plot.size() > 40)
+  {
+    LOG(WARNING) << "It is too long";
+  }
+ 
+  LOG(INFO) << "pathCb:"<<ref_path_plot.size();
+}
 
 //reference_path_plot
 void referenceCb(const geometry_msgs::PointStampedConstPtr &p)
@@ -290,10 +323,11 @@ int main(int argc, char **argv)
   // Set publishers.
   ros::Publisher map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("grid_map", 1, true);
   // Set subscribers.
-  ros::Subscriber reference_sub = nh.subscribe("/clicked_point", 1, referenceCb);
-  ros::Subscriber start_sub = nh.subscribe("/initialpose", 1, startCb);
-  ros::Subscriber end_sub = nh.subscribe("/move_base_simple/goal", 1, goalCb);
+  ros::Subscriber reference_sub = nh.subscribe("/clicked_point1", 1, referenceCb);
+  ros::Subscriber start_sub = nh.subscribe("/initialpose1", 1, startCb);
+  ros::Subscriber end_sub = nh.subscribe("/move_base_simple/goal1", 1, goalCb);
   ros::Subscriber map_sub = nh.subscribe("/map", 1, mapCb);
+  ros::Subscriber path_sub_ = nh.subscribe("/move_base/GlobalPlanner/plan", 2, pathCb);
 
   // Markers initialization.
   ros_viz_tools::RosVizTools markers(nh, "markers");
@@ -308,26 +342,26 @@ int main(int argc, char **argv)
     int id = 0;
 
     // Cancel at double click.
-    if (reference_path_plot.size() >= 2)
-    {
-      const auto &p1 = reference_path_plot[reference_path_plot.size() - 2];
-      const auto &p2 = reference_path_plot.back();
-      if (distance(p1, p2) <= 0.001)
-      {
-        reference_path_plot.clear();
-        reference_rcv = false;
-      }
-    }
+    // if (reference_path_plot.size() >= 2)
+    // {
+    //   const auto &p1 = reference_path_plot[reference_path_plot.size() - 2];
+    //   const auto &p2 = reference_path_plot.back();
+    //   if (distance(p1, p2) <= 0.001)
+    //   {
+    //     reference_path_plot.clear();
+    //     reference_rcv = false;
+    //   }
+    // }
 
     // Visualize reference path selected by mouse.
     {
       visualization_msgs::Marker reference_marker =
           markers.newSphereList(0.2, "reference point", id++, ros_viz_tools::RED, marker_frame_id);
-      for (size_t i = 0; i != reference_path_plot.size(); ++i)
+      for (size_t i = 0; i != ref_path_plot.size(); ++i)
       {
         geometry_msgs::Point p;
-        p.x = reference_path_plot[i].x;
-        p.y = reference_path_plot[i].y;
+        p.x = ref_path_plot[i].x;
+        p.y = ref_path_plot[i].y;
         p.z = 1.0;
         reference_marker.points.push_back(p);
       }
@@ -383,7 +417,7 @@ int main(int argc, char **argv)
       has_opt = true;
       LOG(INFO) << "start PathOptimizer, end_state_rcv:" << end_state_rcv;      
       PathOptimizationNS::PathOptimizer path_optimizer(start_state, end_state, grid_map_);
-      opt_ok = path_optimizer.solve(reference_path_plot, &result_path);
+      opt_ok = path_optimizer.solve(ref_path_plot, &result_path);
       reference_path_opt = path_optimizer.getReferencePath();
       smoothed_reference_path.clear();
       if (!PathOptimizationNS::isEqual(reference_path_opt.getLength(), 0.0))
@@ -601,14 +635,17 @@ int main(int argc, char **argv)
 
     // Publish the grid_map.
     grid_map_.setTimestamp(time.toNSec());
-    static nav_msgs::OccupancyGrid message;
-    static bool is_first = false;
-    if(!is_first)
-    {
-      grid_map::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);          
-      //grid_map::GridMapRosConverter::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);      
-      is_first = true;
-    }
+    nav_msgs::OccupancyGrid message;    
+    grid_map::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);  
+      
+    // static nav_msgs::OccupancyGrid message;
+    // static bool is_first = false;
+    // if(!is_first)
+    // {
+    //   grid_map::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);          
+    //   //grid_map::GridMapRosConverter::toOccupancyGrid(grid_map_, "obstacle", FREE, OCCUPY, message);      
+    //   is_first = true;
+    // }
 
 
     map_publisher.publish(message);
