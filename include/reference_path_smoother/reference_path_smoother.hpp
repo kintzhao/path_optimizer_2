@@ -55,6 +55,7 @@ class ReferencePathSmoother {
  private:
     virtual bool smooth(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path) = 0;
     void bSpline();
+    void path2st();    
     bool postSmooth(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path);
     void setPostHessianMatrix(Eigen::SparseMatrix<double> *matrix_h) const;
     void setPostConstraintMatrix(Eigen::SparseMatrix<double> *matrix_constraints,

@@ -43,12 +43,15 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
     // Smooth reference path.
     // TODO: refactor this part!
     reference_path_->clear();
+    LOG(INFO)<<"smoothing_method:"<<FLAGS_smoothing_method<<" reference_points_size:"<<reference_points.size();
     auto reference_path_smoother = ReferencePathSmoother::create(FLAGS_smoothing_method,
                                                                  reference_points,
                                                                  vehicle_state_->getStartState(),
                                                                  *grid_map_);
+    LOG(INFO)<<"reference_path_smoother->solve";                                                                
     if (!reference_path_smoother->solve(reference_path_)) {
         LOG(ERROR) << "Path optimization FAILED!";
+        LOG(ERROR) << "======================reference_path_smoother->solve============================";        
         return false;
     }
 
@@ -56,6 +59,7 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
     // Divide reference path into segments;
     if (!processReferencePath()) {
         LOG(ERROR) << "Path optimization FAILED!";
+        LOG(ERROR) << "==========================processReferencePath========================";          
         return false;
     }
 
@@ -63,6 +67,7 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
     // Optimize.
     if (!optimizePath(final_path)) {
         LOG(ERROR) << "Path optimization FAILED!";
+        LOG(ERROR) << "==========================optimizePath========================";         
         return false;
     }
     time_recorder.recordTime("end");
@@ -140,7 +145,7 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
     // Solve with soft collision constraints.
     time_recorder.recordTime("Pre solving");
     if (!solver.solve(final_path)) {
-        LOG(ERROR) << "Pre solving failed!";
+        LOG(ERROR) << "====>>> Pre solving failed!";
         reference_path_->logBoundsInfo();
         return false;
     }

@@ -18,6 +18,7 @@ TensionSmoother::TensionSmoother(const std::vector<PathOptimizationNS::State> &i
     ReferencePathSmoother(input_points, start_state, grid_map) {}
 
 bool TensionSmoother::smooth(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path) {
+    LOG(INFO)<<" TensionSmoother::smooth";       
     std::vector<double> x_list, y_list, s_list, angle_list, k_list;
     if (!segmentRawReference(&x_list, &y_list, &s_list, &angle_list, &k_list)) return false;
     std::vector<double> result_x_list, result_y_list, result_s_list;
@@ -31,13 +32,14 @@ bool TensionSmoother::smooth(std::shared_ptr<PathOptimizationNS::ReferencePath> 
                                &result_s_list);
     if (!solver_ok) {
         LOG(ERROR) << "Tension smoother failed!";
+        LOG(ERROR) << "======================TensionSmoother osqpSmooth============================";        
         return false;
     }
     tk::spline x_spline, y_spline;
     x_spline.set_points(result_s_list, result_x_list);
     y_spline.set_points(result_s_list, result_y_list);
 
-    double max_s_result = result_s_list.back() + 3;
+    double max_s_result = result_s_list.back()+ 3;//TODO::
     reference_path->setSpline(x_spline, y_spline, max_s_result);
 
     x_list_ = std::move(result_x_list);
@@ -54,6 +56,7 @@ bool TensionSmoother::osqpSmooth(const std::vector<double> &x_list,
                                  std::vector<double> *result_x_list,
                                  std::vector<double> *result_y_list,
                                  std::vector<double> *result_s_list) {
+    LOG(INFO)<<" TensionSmoother::osqpSmooth";                                     
     CHECK_EQ(x_list.size(), y_list.size());
     CHECK_EQ(y_list.size(), angle_list.size());
     CHECK_EQ(angle_list.size(), s_list.size());
@@ -61,6 +64,7 @@ bool TensionSmoother::osqpSmooth(const std::vector<double> &x_list,
     OsqpEigen::Solver solver;
     solver.settings()->setVerbosity(false);
     solver.settings()->setWarmStart(true);
+    
     solver.data()->setNumberOfVariables(3 * point_num);
     solver.data()->setNumberOfConstraints(3 * point_num);
     // Allocate QP problem matrices and vectors.
