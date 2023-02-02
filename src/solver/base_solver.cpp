@@ -117,13 +117,14 @@ bool BaseSolver::updateProblemFormulationAndSolve(const std::vector<SlState> &in
 }
 
 void BaseSolver::setCost(Eigen::SparseMatrix<double> *matrix_h) const {
+    LOG(WARNING)<<"xxxxxxxxxxxxxxxxxxxx, vars_size_:"<<vars_size_;  
     TimeRecorder time_recorder("Set Cost");
     time_recorder.recordTime("set heassian");
     Eigen::MatrixXd hessian{Eigen::MatrixXd::Constant(vars_size_, vars_size_, 0)};
     const double weight_l = 0.0;
-    const double weight_kappa = 20.0;
-    const double weight_dkappa = 100.0;
-    const double weight_slack = 10;// 1000.0 - 200 * iter_num_;
+    const double weight_kappa = 0.2;//20.0;//TODO::
+    const double weight_dkappa = 1.0;//100.0;
+    const double weight_slack = 0.1;//10;// 1000.0 - 200 * iter_num_;
     for (size_t i = 0; i < n_; ++i) {
         hessian(3 * i, 3 * i) += weight_l;
         hessian(3 * i + 2, 3 * i + 2) += weight_kappa;
@@ -223,7 +224,7 @@ void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,
         upper_bound->block(3 * (i + 1), 0, 3, 1) = -c_list[i];
     }
     // Kappa.
-    const double kappa_limit = tan(FLAGS_max_steering_angle) / FLAGS_wheel_base;
+    const double kappa_limit = tan(FLAGS_max_steering_angle) / FLAGS_wheel_base;//TODO::
     LOG(INFO) << "kappa limit " << kappa_limit;
     for (size_t i = 0; i < n_; ++i) {
         (*lower_bound)(kappa_idx + i) = -kappa_limit;
@@ -247,10 +248,10 @@ void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,
         }
     }
     // End state.
-    (*lower_bound)(end_state_idx) = 0.0;//-1.0; //-OsqpEigen::INFTY; //TODO::
-    (*upper_bound)(end_state_idx) = 0.0;//1.0; //OsqpEigen::INFTY;
-    (*lower_bound)(end_state_idx + 1) = 0.0;//-OsqpEigen::INFTY;
-    (*upper_bound)(end_state_idx + 1) = 0.0;//OsqpEigen::INFTY;
+    (*lower_bound)(end_state_idx) =-0.1; //-OsqpEigen::INFTY; //TODO::
+    (*upper_bound)(end_state_idx) =0.1; //OsqpEigen::INFTY;
+    (*lower_bound)(end_state_idx + 1) = -0.1;//-OsqpEigen::INFTY;
+    (*upper_bound)(end_state_idx + 1) = 0.1;//OsqpEigen::INFTY;
     if (FLAGS_constraint_end_heading && reference_path_.isBlocked() == nullptr) {
         double end_psi = constrainAngle(vehicle_state_.getTargetState().heading - ref_states.back().heading);
         if (end_psi < 70 * M_PI / 180) {

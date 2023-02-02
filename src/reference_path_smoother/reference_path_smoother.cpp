@@ -109,6 +109,7 @@ double ReferencePathSmoother::getG(const PathOptimizationNS::APoint &point,
         obstacle_cost = (safety_distance - distance_to_obs) / safety_distance * FLAGS_search_obstacle_cost;
     }
     // Deviation cost.
+    LOG(INFO)<<"xxxxxxxxxxxxxxxxxxxxxxxxxxx>>>"<<FLAGS_search_deviation_cost;
     double offset_cost = fabs(point.l) / FLAGS_search_lateral_range * FLAGS_search_deviation_cost;
     // Smoothness cost.
     return parent.g + offset_cost + obstacle_cost;
@@ -120,11 +121,11 @@ void ReferencePathSmoother::calculateCostAt(std::vector<std::vector<DpPoint>> &s
     if (layer_index == 0) return;
     if (!samples[layer_index][lateral_index].is_feasible) return;
 
-    static const double weight_ref_offset = 1.0;
-    static const double weight_obstacle = 0.5;
-    static const double weight_angle_change = 16.0;
+    static const double weight_ref_offset = 2.0;//TODO
+    static const double weight_obstacle = 1.0;//0.5;
+    static const double weight_angle_change = 0.5;//16.0;
     static const double weight_ref_angle_diff = 0.5;
-    static const double safe_distance = 3.0;
+    static const double safe_distance = FLAGS_car_width / 2.0 + 1.2;//TODO:://3.0;
 
     auto &point = samples[layer_index][lateral_index];
     double self_cost = 0;
@@ -156,9 +157,10 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
     const tk::spline &y_s = reference->getYS();
     // Sampling interval.
     double tmp_s = getProjection(x_s, y_s, start_state_.x, start_state_.y, reference->getLength()).s;
+    LOG(INFO)<<"start_state_, s:"<<tmp_s;
     layers_s_list_.clear();
     layers_bounds_.clear();
-    double search_ds = reference->getLength() > 6 ? FLAGS_search_longitudial_spacing : 0.5;//TODO::
+    double search_ds = 0.1;//reference->getLength() > 6 ? FLAGS_search_longitudial_spacing : 0.5;//TODO::
     while (tmp_s < reference->getLength()) {
         layers_s_list_.emplace_back(tmp_s);
         tmp_s += search_ds;
@@ -168,6 +170,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
     target_s_ = layers_s_list_.back();
 
     double vehicle_s = layers_s_list_.front();
+    LOG(INFO)<<"vehicle_s:"<<vehicle_s;    
     State proj_point(x_s(vehicle_s), y_s(vehicle_s), getHeading(x_s, y_s, vehicle_s));
     auto vehicle_local = global2Local(proj_point, start_state_);
     vehicle_l_wrt_smoothed_ref_ = vehicle_local.y;
@@ -180,7 +183,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
 
     std::vector<std::vector<DpPoint>> samples;
     samples.reserve(layers_s_list_.size());
-    static const double search_threshold = FLAGS_car_width / 2.0 + 0.2;//0.05;//TODO::
+    static const double search_threshold = FLAGS_car_width / 2.0 + 0.02;//TODO::
     LOG(INFO) << "Vehicle search_threshold:"<<search_threshold;  
   
     // Sample nodes.
@@ -205,10 +208,14 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
             dp_point.lateral_index = lateral_index;
             grid_map::Position node_pose(dp_point.x, dp_point.y);
             dp_point.dis_to_obs = grid_map_.isInside(node_pose) ? grid_map_.getObstacleDistance(node_pose) : -1;
-            if ((ref_curvature < 0 && cur_l < ref_r) || (ref_curvature > 0 && cur_l > ref_r)
-                || dp_point.dis_to_obs < search_threshold) {
+            //TODO::curvature
+            // if ((ref_curvature < 0 && cur_l < ref_r) || (ref_curvature > 0 && cur_l > ref_r)
+            //     || dp_point.dis_to_obs < search_threshold) {
+            //     dp_point.is_feasible = false;
+            // }
+            if (dp_point.dis_to_obs < search_threshold) {
                 dp_point.is_feasible = false;
-            }
+            }            
             if (i == 0 && dp_point.lateral_index != start_lateral_index) dp_point.is_feasible = false;
             if (i == 0 && dp_point.lateral_index == start_lateral_index) {
                 dp_point.is_feasible = true;
@@ -248,7 +255,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
         if (layer.front().layer_index != 0 && !is_layer_feasible) break;
         max_layer_reached = layer.front().layer_index;
     }
-
+    LOG(INFO)<<"max_layer_reached:"<<max_layer_reached<<" ==> samples_layers:"<<samples.size();    
     // Retrieve path.
     const DpPoint *ptr = nullptr;
     auto min_cost = DBL_MAX;
@@ -258,17 +265,19 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
             min_cost = point.cost;
         }
     }
+    LOG(INFO)<<"max_layer_reached:"<<max_layer_reached<<" min_cost:"<<min_cost;    
 
     while (ptr) {
         if (ptr->layer_index == 0) {
             layers_bounds_.emplace_back(-10, 10);
         } else {
-            static const double check_s = 0.2;//0.2;//TODO::
+            static const double check_s = 0.02;//0.2;//0.2;//TODO::
             double upper_bound = check_s + ptr->rough_upper_bound;
             double lower_bound = -check_s + ptr->rough_lower_bound;
-            static const double check_limit = 6.0;//TODO::
+            static const double check_limit = 1.2;//6.0;//TODO::
             double ref_x = x_s(ptr->s);
             double ref_y = y_s(ptr->s);
+            //decrease bound
             while (upper_bound < check_limit) {
                 grid_map::Position pos;
                 pos(0) = ref_x + upper_bound * cos(ptr->heading + M_PI_2);
@@ -298,6 +307,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
         ptr = ptr->parent;
     }
 
+    LOG(INFO)<<"layers_bounds_ size"<<layers_bounds_.size()<<" layers_s_list_ size:"<<layers_s_list_.size();    
     std::reverse(layers_bounds_.begin(), layers_bounds_.end());
     layers_s_list_.resize(layers_bounds_.size());
 
@@ -307,6 +317,7 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
 }
 
 bool ReferencePathSmoother::graphSearch(std::shared_ptr<PathOptimizationNS::ReferencePath> reference) {
+    LOG(INFO)<<"!!!graphSearch!!!";
     auto t1 = std::clock();
     tk::spline x_s = reference->getXS();
     tk::spline y_s = reference->getYS();
@@ -598,6 +609,8 @@ bool ReferencePathSmoother::postSmooth(std::shared_ptr<PathOptimizationNS::Refer
         double ref_dir = getHeading(ref_xs, ref_ys, ref_s);
         x_list.push_back(ref_xs(ref_s) + QPSolution(i) * cos(ref_dir + M_PI_2));
         y_list.push_back(ref_ys(ref_s) + QPSolution(i) * sin(ref_dir + M_PI_2));
+        // x_list.push_back(ref_xs(ref_s));
+        // y_list.push_back(ref_ys(ref_s));        
         if (i > 0) {
             s += sqrt(pow(x_list[i] - x_list[i - 1], 2) + pow(y_list[i] - y_list[i - 1], 2));
         }
@@ -616,9 +629,9 @@ void ReferencePathSmoother::setPostHessianMatrix(Eigen::SparseMatrix<double> *ma
     const size_t matrix_size = 3 * size;
     Eigen::MatrixXd hessian = Eigen::MatrixXd::Constant(matrix_size, matrix_size, 0);
     // TODO: config
-    const double weight_x = 1;
-    const double weight_dx = 100;
-    const double weight_ddx = 1000;
+    const double weight_x = 100;//1; //TODO::
+    const double weight_dx = 0.1;//10;//100;
+    const double weight_ddx = 0.01;//2;//1000;
     for (int i = 0; i < size; ++i) {
         hessian(i, i) = weight_x;
         hessian(size + i, size + i) = weight_dx;

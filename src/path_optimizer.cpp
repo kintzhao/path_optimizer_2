@@ -122,6 +122,9 @@ bool PathOptimizer::processReferencePath() {
     setReferencePathLength();
 
     reference_path_->buildReferenceFromSpline(FLAGS_output_spacing / 2.0, FLAGS_output_spacing);
+    LOG(INFO)<<"length:"<<reference_path_->getLength();
+    //reference_path_->buildReferenceFromSpline(0.0, reference_path_->getLength());    
+    
     reference_path_->updateBounds(*grid_map_);
     return true;
 }
@@ -139,7 +142,13 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
         input_state.s = ref_state.s;
         input_state.k = ref_state.k;
         input_path.push_back(input_state);
+        //final_path->push_back(input_state);
     }
+
+    //return true;//TODO::
+
+
+
     BaseSolver solver(*reference_path_, *vehicle_state_, input_path);
     TimeRecorder time_recorder("Optimize Path Function");
     // Solve with soft collision constraints.
@@ -155,6 +164,7 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
     time_recorder.recordTime("Solving");
     // BaseSolver post_solver(*reference_path_, *vehicle_state_, *final_path);
     // if (!post_solver.solve(final_path)) {
+
     if (!solver.updateProblemFormulationAndSolve(*final_path, final_path)) {
         LOG(ERROR) << "Solving failed!";
         reference_path_->logBoundsInfo();

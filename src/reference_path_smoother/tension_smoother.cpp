@@ -22,30 +22,47 @@ bool TensionSmoother::smooth(std::shared_ptr<PathOptimizationNS::ReferencePath> 
     std::vector<double> x_list, y_list, s_list, angle_list, k_list;
     if (!segmentRawReference(&x_list, &y_list, &s_list, &angle_list, &k_list)) return false;
     std::vector<double> result_x_list, result_y_list, result_s_list;
-    bool solver_ok = osqpSmooth(x_list,
-                               y_list,
-                               angle_list,
-                               k_list,
-                               s_list,
-                               &result_x_list,
-                               &result_y_list,
-                               &result_s_list);
-    if (!solver_ok) {
-        LOG(ERROR) << "Tension smoother failed!";
-        LOG(ERROR) << "======================TensionSmoother osqpSmooth============================";        
-        return false;
-    }
-    tk::spline x_spline, y_spline;
-    x_spline.set_points(result_s_list, result_x_list);
-    y_spline.set_points(result_s_list, result_y_list);
 
-    double max_s_result = result_s_list.back()+ 3;//TODO::
+    tk::spline x_spline, y_spline;
+    x_spline.set_points(s_list, x_list);
+    y_spline.set_points(s_list, y_list);
+
+    double max_s_result = s_list.back()+ 3;//TODO::
     reference_path->setSpline(x_spline, y_spline, max_s_result);
 
-    x_list_ = std::move(result_x_list);
-    y_list_ = std::move(result_y_list);
-    s_list_ = std::move(result_s_list);
+    x_list_ = std::move(x_list);
+    y_list_ = std::move(y_list);
+    s_list_ = std::move(s_list);
     return true;
+
+
+
+
+
+    // bool solver_ok = osqpSmooth(x_list,
+    //                            y_list,
+    //                            angle_list,
+    //                            k_list,
+    //                            s_list,
+    //                            &result_x_list,
+    //                            &result_y_list,
+    //                            &result_s_list);
+    // if (!solver_ok) {
+    //     LOG(ERROR) << "Tension smoother failed!";
+    //     LOG(ERROR) << "======================TensionSmoother osqpSmooth============================";        
+    //     return false;
+    // }
+    // tk::spline x_spline, y_spline;
+    // x_spline.set_points(result_s_list, result_x_list);
+    // y_spline.set_points(result_s_list, result_y_list);
+
+    // double max_s_result = result_s_list.back()+ 3;//TODO::
+    // reference_path->setSpline(x_spline, y_spline, max_s_result);
+
+    // x_list_ = std::move(result_x_list);
+    // y_list_ = std::move(result_y_list);
+    // s_list_ = std::move(result_s_list);
+    // return true;
 }
 
 bool TensionSmoother::osqpSmooth(const std::vector<double> &x_list,
@@ -110,6 +127,7 @@ void TensionSmoother::setHessianMatrix(size_t size, Eigen::SparseMatrix<double> 
     const size_t matrix_size = 3 * size;
     Eigen::MatrixXd hessian = Eigen::MatrixXd::Constant(matrix_size, matrix_size, 0);
     // Curvature part.
+    LOG(INFO)<<"!!!!!!!!!!!!!!!!!!!FLAGS_cartesian_curvature_weight:"<<FLAGS_cartesian_curvature_weight;
     Eigen::Matrix<double, 3, 1> dds_vec{1, -2, 1};
     Eigen::Matrix3d dds_part{dds_vec * dds_vec.transpose() * FLAGS_cartesian_curvature_weight};
     Eigen::Matrix<double, 4, 1> ddds_vec{-1, 3, -3, 1};

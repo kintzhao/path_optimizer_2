@@ -52,28 +52,44 @@ DEFINE_bool(enable_searching, true, "search before optimization");
 
 DEFINE_double(search_lateral_range, 1.2, "max offset when searching");
 
-DEFINE_double(search_longitudial_spacing, 0.1, "longitudinal spacing when searching");
+DEFINE_double(search_longitudial_spacing, 0.05, "longitudinal spacing when searching");
 
 DEFINE_double(search_lateral_spacing, 0.05, "lateral spacing when searching");
 
 // TODO: change names!
-DEFINE_double(frenet_angle_diff_weight, 1500, "frenet smoothing angle difference weight");
+/*
+FLAGS_frenet_angle_diff_weight
+FLAGS_frenet_angle_diff_diff_weight
+FLAGS_frenet_deviation_weight
 
-DEFINE_double(frenet_angle_diff_diff_weight, 200, "frenet smoothing angle diff diff weight");
+FLAGS_cartesian_curvature_weight
+FLAGS_cartesian_curvature_rate_weight
+FLAGS_cartesian_deviation_weight
+FLAGS_tension_2_deviation_weight
+FLAGS_tension_2_curvature_weight
+FLAGS_tension_2_curvature_rate_weight
+FLAGS_search_obstacle_cost
+FLAGS_search_deviation_cost
 
-DEFINE_double(frenet_deviation_weight, 15, "frenet smoothing deviation from the orignal path");
+FLAGS_K_curvature_weight
+FLAGS_K_curvature_rate_weight
+FLAGS_K_deviation_weight
+FLAGS_KP_curvature_weight
+FLAGS_KP_curvature_rate_weight
+FLAGS_KP_deviation_weight
+FLAGS_KP_slack_weight
+*/
+DEFINE_double(frenet_angle_diff_weight, 0.0, "frenet smoothing angle difference weight");//1500
+DEFINE_double(frenet_angle_diff_diff_weight, 0.0, "frenet smoothing angle diff diff weight");//200
+DEFINE_double(frenet_deviation_weight, 0.0, "frenet smoothing deviation from the orignal path");//15
 
 DEFINE_double(cartesian_curvature_weight, 1, "");
-
 DEFINE_double(cartesian_curvature_rate_weight, 50, "");
-
 DEFINE_double(cartesian_deviation_weight, 0.0, "");
 
-DEFINE_double(tension_2_deviation_weight, 0.005, "");
-
-DEFINE_double(tension_2_curvature_weight, 1, "");
-
-DEFINE_double(tension_2_curvature_rate_weight, 10, "");
+DEFINE_double(tension_2_deviation_weight, 0.1, "");//0.005
+DEFINE_double(tension_2_curvature_weight, 0.0, "");//1
+DEFINE_double(tension_2_curvature_rate_weight, 0.0, "");//10
 
 DEFINE_bool(enable_simple_boundary_decision, true, "faster, but may go wrong sometimes");
 

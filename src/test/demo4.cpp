@@ -171,12 +171,17 @@ void pathCb(const nav_msgs::Path::ConstPtr path)
   start_state = ref_path_plot.front();
   end_state = ref_path_plot.back();
 
-  if (map_rcv )
+  if (map_rcv && ref_path_plot.size() > 6)
   {
     reference_rcv = true;
     start_state_rcv = true;  
     end_state_rcv = true;      
   }
+  else
+  {
+    LOG(WARNING) << "====>>>>>>ref_path_plot:"<<ref_path_plot.size();
+  }
+
   if(ref_path_plot.size() > 40)
   {
     LOG(WARNING) << "It is too long";
@@ -453,7 +458,7 @@ int main(int argc, char **argv)
         path_color.b = 0.0;
       }
       visualization_msgs::Marker result_marker =
-          markers.newLineStrip(0.5, "optimized path", id++, path_color, marker_frame_id);
+          markers.newLineStrip(0.05, "result_path", id++, path_color, marker_frame_id);
       LOG(INFO)<<"result_path: "<<result_path.size();          
       for (size_t i = 0; i != result_path.size(); ++i)
       {
@@ -470,6 +475,7 @@ int main(int argc, char **argv)
       markers.append(result_marker);
     }
     // Visualize result_path_by_boxes
+    if(false)
     {
       visualization_msgs::Marker result_boxes_marker =
           markers.newLineStrip(0.15, "optimized path by boxes", id++, ros_viz_tools::BLACK, marker_frame_id);
@@ -488,7 +494,7 @@ int main(int argc, char **argv)
     {
       visualization_msgs::Marker smoothed_reference_marker =
           markers.newLineStrip(0.07,
-                               "smoothed reference path",
+                               "smoothed_ref_path",
                                id++,
                                ros_viz_tools::YELLOW,
                                marker_frame_id);
@@ -504,6 +510,7 @@ int main(int argc, char **argv)
       markers.append(smoothed_reference_marker);
     }
     //vehicle_geometry_marker
+    if(false)    
     {
       ros_viz_tools::ColorRGBA vehicle_color = ros_viz_tools::GRAY;
       vehicle_color.a = 0.5;
@@ -580,7 +587,7 @@ int main(int argc, char **argv)
     //front_bounds_marker reference_path_opt.getBounds()
     {
       visualization_msgs::Marker front_bounds_marker =
-          markers.newSphereList(0.25, "front bounds", id++, ros_viz_tools::LIGHT_BLUE, marker_frame_id);
+          markers.newSphereList(0.1, "front bounds", id++, ros_viz_tools::LIGHT_BLUE, marker_frame_id);
       for (const auto &bound : reference_path_opt.getBounds())
       {
         const auto &front_bound = bound.front;
@@ -598,7 +605,7 @@ int main(int argc, char **argv)
     //rear_bounds_marker reference_path_opt.getBounds()
     {
       visualization_msgs::Marker rear_bounds_marker =
-          markers.newSphereList(0.25, "rear bounds", id++, ros_viz_tools::LIME_GREEN, marker_frame_id);
+          markers.newSphereList(0.1, "rear bounds", id++, ros_viz_tools::LIME_GREEN, marker_frame_id);
       for (const auto &bound : reference_path_opt.getBounds())
       {
         const auto &rear_bound = bound.rear;
@@ -616,7 +623,7 @@ int main(int argc, char **argv)
     //center_bounds_marker
     {
       visualization_msgs::Marker center_bounds_marker =
-          markers.newSphereList(0.25, "center bounds", id++, ros_viz_tools::CYAN, marker_frame_id);
+          markers.newSphereList(0.1, "center bounds", id++, ros_viz_tools::CYAN, marker_frame_id);
       for (const auto &bound : reference_path_opt.getBounds())
       {
         const auto &center_bounds = bound.center;

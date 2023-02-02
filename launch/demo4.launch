@@ -1,6 +1,6 @@
 <launch>
   <arg name="image"  default="sim.pgm"/>
-    <node pkg="path_optimizer_2" type="path_optimizer_2_demo4" name="path_optimizer_2_demo" args="--log_dir=." output="screen" >
+    <node pkg="path_optimizer_2" type="path_optimizer_2_demo4" name="path_optimizer_2_demo" args="--log_dir=." output="screen" launch-prefix="gdb -ex run --args" >
       <param name="image" type="str" value="$(arg image)"/>
 
     </node>
