@@ -460,6 +460,22 @@ int main(int argc, char **argv)
         markers.append(reference_marker);
       }
 
+      // Visualize input_path
+      {
+        visualization_msgs::Marker reference_marker =
+          markers.newSphereList(0.1, "r1_path", id++, ros_viz_tools::PURPLE, marker_frame_id);
+
+        for (size_t i = 0; i != path_optimizer.r1_path_.size(); ++i)
+        {
+          geometry_msgs::Point p;
+          p.x = path_optimizer.r1_path_[i].x();
+          p.y = path_optimizer.r1_path_[i].y();
+          p.z = 1.0;
+          reference_marker.points.push_back(p);
+        }
+        markers.append(reference_marker);
+      }
+
       // Visualize lower_boundary
       {
         visualization_msgs::Marker reference_marker =

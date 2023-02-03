@@ -40,7 +40,8 @@ public:
     std::vector<Eigen::Vector2d> lower_boundary_;
     std::vector<Eigen::Vector2d> uper_boundary_;  
 
-    std::vector<Eigen::Vector2d> input_path_;             
+    std::vector<Eigen::Vector2d> input_path_;  
+    std::vector<Eigen::Vector2d> r1_path_;                 
 private:
     // Core function.
     bool optimizePath(std::vector<SlState> *final_path);

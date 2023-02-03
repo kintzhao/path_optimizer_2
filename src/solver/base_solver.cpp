@@ -42,6 +42,8 @@ BaseSolver::BaseSolver(const ReferencePath &reference_path,
     vars_size_ = state_size_ + control_size_ + slack_size_;
     cons_size_ = 4 * n_ + precise_planning_size_ + n_ + 2;
     LOG(INFO) << "Ref length " << reference_path_.getLength() << ", precise_planning_size_ " << precise_planning_size_;
+    LOG(WARNING) << "vars_size_:" << vars_size_ << ", slack_size_:" << slack_size_<< ", cons_size_:" << cons_size_;
+
 }
 
 std::unique_ptr<BaseSolver> BaseSolver::create(std::string &type,
@@ -127,7 +129,7 @@ void BaseSolver::setCost(Eigen::SparseMatrix<double> *matrix_h) const {
     TimeRecorder time_recorder("Set Cost");
     time_recorder.recordTime("set heassian");
     Eigen::MatrixXd hessian{Eigen::MatrixXd::Constant(vars_size_, vars_size_, 0)};
-    const double weight_l = 0.0;
+    const double weight_l = 1.0;//0.0;
     const double weight_kappa = 0.2;//20.0;//TODO::
     const double weight_dkappa = 1.0;//100.0;
     const double weight_slack = 0.1;//10;// 1000.0 - 200 * iter_num_;

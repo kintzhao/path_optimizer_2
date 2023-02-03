@@ -161,6 +161,10 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
         reference_path_->logBoundsInfo();
         return false;
     }
+    for (const auto &ref_state : *final_path) {
+        r1_path_.push_back(Eigen::Vector2d(ref_state.x, ref_state.y));
+    }
+
     time_recorder.recordTime("Update ref");
     // reference_path_->updateBoundsOnInputStates(*grid_map_, *input_path);
     // Solve.
