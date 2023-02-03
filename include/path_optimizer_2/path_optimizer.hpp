@@ -37,6 +37,10 @@ public:
 //    std::vector<std::tuple<State, double, double>> display_abnormal_bounds() const;
     const ReferencePath &getReferencePath() const;
 
+    std::vector<Eigen::Vector2d> lower_boundary_;
+    std::vector<Eigen::Vector2d> uper_boundary_;  
+
+    std::vector<Eigen::Vector2d> input_path_;             
 private:
     // Core function.
     bool optimizePath(std::vector<SlState> *final_path);

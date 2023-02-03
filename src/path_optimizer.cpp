@@ -54,7 +54,8 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
         LOG(ERROR) << "======================reference_path_smoother->solve============================";        
         return false;
     }
-
+    lower_boundary_ = reference_path_smoother->lower_boundary_;
+    uper_boundary_ = reference_path_smoother->uper_boundary_;
     time_recorder.recordTime("reference path segmentation");
     // Divide reference path into segments;
     if (!processReferencePath()) {
@@ -141,11 +142,15 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
         input_state.k = ref_state.k;
         input_path.push_back(input_state);
         //final_path->push_back(input_state);
+
+        input_path_.push_back(Eigen::Vector2d(ref_state.x, ref_state.y));
     }
 
     //return true;//TODO::
-
-
+    if(input_path.size() < 6)
+    {
+      LOG(WARNING)<<"====>>> Maybe error: "<<input_path.size();
+    }
 
     BaseSolver solver(*reference_path_, *vehicle_state_, input_path);
     TimeRecorder time_recorder("Optimize Path Function");

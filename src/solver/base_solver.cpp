@@ -18,21 +18,24 @@ BaseSolver::BaseSolver(const ReferencePath &reference_path,
     n_(input_path.size()),
     reference_path_(reference_path),
     vehicle_state_(vehicle_state),
-    input_path_(input_path) {
+    input_path_(input_path) 
+{
     state_size_ = 3 * n_;
     control_size_ = n_ - 1;
     precise_planning_size_ = input_path.size();
     LOG(INFO)<<" precise_planning_size_:"<<precise_planning_size_;  
-    if (FLAGS_rough_constraints_far_away) {
-        const auto precise_planning_iter = std::lower_bound(
-            input_path.begin(),
-            input_path.end(),
-            FLAGS_precise_planning_length,
-            [](const SlState& state, double s){
-            return state.s < s;
-            });
-        precise_planning_size_ = std::distance(input_path.begin(), precise_planning_iter);
-    }
+    // if (FLAGS_rough_constraints_far_away) {
+    //     const auto precise_planning_iter = std::lower_bound(
+    //         input_path.begin(),
+    //         input_path.end(),
+    //         FLAGS_precise_planning_length,
+    //         [](const SlState& state, double s){
+    //         return state.s < s;
+    //         });
+    //     precise_planning_size_ = std::distance(input_path.begin(), precise_planning_iter);
+    // }
+    static int count = 0;
+    LOG(WARNING)<<"===================>>>>init_BaseSolver:"<<count++;        
     LOG(INFO)<<" =>precise_planning_size_:"<<precise_planning_size_;      
     slack_size_ = precise_planning_size_ + n_;
     LOG(INFO)<<" state_size_:"<<state_size_<<" control_size_:"<<control_size_<<" slack_size_:"<<slack_size_;

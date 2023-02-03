@@ -40,7 +40,8 @@ class ReferencePathSmoother {
 
     bool solve(std::shared_ptr<PathOptimizationNS::ReferencePath> reference_path);
     std::vector<std::vector<double>> display() const;
-
+    std::vector<Eigen::Vector2d> lower_boundary_;
+    std::vector<Eigen::Vector2d> uper_boundary_;    
  protected:
     bool segmentRawReference(std::vector<double> *x_list,
                              std::vector<double> *y_list,
@@ -76,7 +77,6 @@ class ReferencePathSmoother {
     std::unordered_set<const APoint *> closed_set_;
     std::vector<double> layers_s_list_;
     std::vector<std::pair<double, double>> layers_bounds_;
-    std::vector<grid_map::Position> lower_boundary_;
     double vehicle_l_wrt_smoothed_ref_;
 
 };

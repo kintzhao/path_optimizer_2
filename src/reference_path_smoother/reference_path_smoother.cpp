@@ -303,6 +303,17 @@ bool ReferencePathSmoother::graphSearchDp(std::shared_ptr<PathOptimizationNS::Re
                 }
             }
             layers_bounds_.emplace_back(lower_bound, upper_bound);
+            {
+              grid_map::Position pos;
+              pos(0) = ref_x + lower_bound * cos(ptr->heading + M_PI_2);
+              pos(1) = ref_y + lower_bound * sin(ptr->heading + M_PI_2);
+              lower_boundary_.emplace_back(pos);
+
+              grid_map::Position pos2;
+              pos2(0) = ref_x + upper_bound * cos(ptr->heading + M_PI_2);
+              pos2(1) = ref_y + upper_bound * sin(ptr->heading + M_PI_2);
+              uper_boundary_.emplace_back(pos2);
+            }
         }
         ptr = ptr->parent;
     }

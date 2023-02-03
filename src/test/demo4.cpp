@@ -442,7 +442,54 @@ int main(int argc, char **argv)
       {
         std::cout << "ok!" << std::endl;
       }
-      LOG(INFO) << "start PathOptimizer, opt_ok:" << opt_ok;  
+      LOG(INFO) << "start PathOptimizer, opt_ok:" << opt_ok; 
+
+      // Visualize input_path
+      {
+        visualization_msgs::Marker reference_marker =
+            markers.newSphereList(0.1, "input_path", id++, ros_viz_tools::LIGHT_BLUE, marker_frame_id);
+
+        for (size_t i = 0; i != path_optimizer.input_path_.size(); ++i)
+        {
+          geometry_msgs::Point p;
+          p.x = path_optimizer.input_path_[i].x();
+          p.y = path_optimizer.input_path_[i].y();
+          p.z = 1.0;
+          reference_marker.points.push_back(p);
+        }
+        markers.append(reference_marker);
+      }
+
+      // Visualize lower_boundary
+      {
+        visualization_msgs::Marker reference_marker =
+            markers.newSphereList(0.05, "lower_boundary", id++, ros_viz_tools::BLUE, marker_frame_id);
+        LOG(INFO)<<"path_optimizer.lower_boundary_.size::"<<path_optimizer.lower_boundary_.size();
+        for (size_t i = 0; i != path_optimizer.lower_boundary_.size(); ++i)
+        {
+          geometry_msgs::Point p;
+          p.x = path_optimizer.lower_boundary_[i].x();
+          p.y = path_optimizer.lower_boundary_[i].y();
+          p.z = 1.0;
+          reference_marker.points.push_back(p);
+        }
+        markers.append(reference_marker);
+      }
+      // Visualize lower_boundary
+      {
+        visualization_msgs::Marker reference_marker =
+            markers.newSphereList(0.05, "uper_boundary", id++, ros_viz_tools::LIME_GREEN, marker_frame_id);
+        LOG(INFO)<<"path_optimizer.uper_boundary_.size::"<<path_optimizer.uper_boundary_.size();
+        for (size_t i = 0; i != path_optimizer.uper_boundary_.size(); ++i)
+        {
+          geometry_msgs::Point p;
+          p.x = path_optimizer.uper_boundary_[i].x();
+          p.y = path_optimizer.uper_boundary_[i].y();
+          p.z = 1.0;
+          reference_marker.points.push_back(p);
+        }
+        markers.append(reference_marker);
+      }
     }
 
     // Visualize  result_path
