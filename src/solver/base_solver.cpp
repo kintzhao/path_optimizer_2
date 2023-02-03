@@ -22,6 +22,7 @@ BaseSolver::BaseSolver(const ReferencePath &reference_path,
     state_size_ = 3 * n_;
     control_size_ = n_ - 1;
     precise_planning_size_ = input_path.size();
+    LOG(INFO)<<" precise_planning_size_:"<<precise_planning_size_;  
     if (FLAGS_rough_constraints_far_away) {
         const auto precise_planning_iter = std::lower_bound(
             input_path.begin(),
@@ -32,7 +33,9 @@ BaseSolver::BaseSolver(const ReferencePath &reference_path,
             });
         precise_planning_size_ = std::distance(input_path.begin(), precise_planning_iter);
     }
+    LOG(INFO)<<" =>precise_planning_size_:"<<precise_planning_size_;      
     slack_size_ = precise_planning_size_ + n_;
+    LOG(INFO)<<" state_size_:"<<state_size_<<" control_size_:"<<control_size_<<" slack_size_:"<<slack_size_;
     vars_size_ = state_size_ + control_size_ + slack_size_;
     cons_size_ = 4 * n_ + precise_planning_size_ + n_ + 2;
     LOG(INFO) << "Ref length " << reference_path_.getLength() << ", precise_planning_size_ " << precise_planning_size_;
@@ -90,7 +93,7 @@ bool BaseSolver::solve(std::vector<SlState> *optimized_path) {
     time_recorder.recordTime("Retrive path");
     getOptimizedPath(QPSolution, optimized_path);
     time_recorder.recordTime("end");
-    time_recorder.printTime();
+    //time_recorder.printTime();
     return true;
 }
 
@@ -112,7 +115,7 @@ bool BaseSolver::updateProblemFormulationAndSolve(const std::vector<SlState> &in
     const auto &QPSolution = solver_.getSolution();
     getOptimizedPath(QPSolution, optimized_path);
     time_recorder.recordTime("end");
-    time_recorder.printTime();
+    //time_recorder.printTime();
     return true;
 }
 
@@ -145,7 +148,7 @@ void BaseSolver::setCost(Eigen::SparseMatrix<double> *matrix_h) const {
     time_recorder.recordTime("return matrix");
     *matrix_h = hessian.sparseView();
     time_recorder.recordTime("end");
-    time_recorder.printTime();
+    //time_recorder.printTime();
 }
 
 void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,
@@ -225,10 +228,10 @@ void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,
     }
     // Kappa.
     const double kappa_limit = tan(FLAGS_max_steering_angle) / FLAGS_wheel_base;//TODO::
-    LOG(INFO) << "kappa limit " << kappa_limit;
+    LOG(WARNING) << "kappa limit " << kappa_limit;
     for (size_t i = 0; i < n_; ++i) {
-        (*lower_bound)(kappa_idx + i) = -kappa_limit;
-        (*upper_bound)(kappa_idx + i) = kappa_limit;
+        (*lower_bound)(kappa_idx + i) =  -OsqpEigen::INFTY;//-kappa_limit;
+        (*upper_bound)(kappa_idx + i) =  OsqpEigen::INFTY;//kappa_limit;
     }
     // Collision.
     const auto &bounds = reference_path_.getBounds();

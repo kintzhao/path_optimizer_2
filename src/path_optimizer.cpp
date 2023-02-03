@@ -71,7 +71,7 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
         return false;
     }
     time_recorder.recordTime("end");
-    time_recorder.printTime();
+    //time_recorder.printTime();
     return true;
 }
 
@@ -169,7 +169,7 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
         return false;
     }
     time_recorder.recordTime("end");
-    time_recorder.printTime();
+    //time_recorder.printTime();
     return true;
 }
 

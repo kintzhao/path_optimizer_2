@@ -123,7 +123,7 @@ DEFINE_double(KP_deviation_weight, 0, "deviation weight of solver KP and KPC");
 
 DEFINE_double(KP_slack_weight, 3, "punish distance to obstacles");
 
-DEFINE_double(expected_safety_margin, 0.15, "soft constraint on the distance to obstacles");
+DEFINE_double(expected_safety_margin, 0.08, "soft constraint on the distance to obstacles");
 
 // TODO: make this work.
 DEFINE_bool(constraint_end_heading, true, "add constraints on end heading");

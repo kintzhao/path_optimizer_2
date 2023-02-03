@@ -76,6 +76,7 @@ class ReferencePathSmoother {
     std::unordered_set<const APoint *> closed_set_;
     std::vector<double> layers_s_list_;
     std::vector<std::pair<double, double>> layers_bounds_;
+    std::vector<grid_map::Position> lower_boundary_;
     double vehicle_l_wrt_smoothed_ref_;
 
 };
