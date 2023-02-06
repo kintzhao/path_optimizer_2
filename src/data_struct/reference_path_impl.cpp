@@ -329,7 +329,7 @@ bool ReferencePathImpl::buildReferenceFromSpline(double delta_s_smaller, double 
         double h = getHeading(*x_s_, *y_s_, tmp_s);
         double k = getCurvature(*x_s_, *y_s_, tmp_s);
         reference_states_.emplace_back(x, y, h, k, tmp_s);
-        // Use k to decide delta s.
+        // Use k to decide delta s.//TODO::
         if (FLAGS_enable_dynamic_segmentation) {
             double k_share = fabs(k) > large_k ? 1 :
                              fabs(k) < small_k ? 0 : (fabs(k) - small_k) / (large_k - small_k);

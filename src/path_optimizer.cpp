@@ -147,9 +147,10 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
     }
 
     //return true;//TODO::
-    if(input_path.size() < 6)
+    if(input_path.size() < 4)
     {
       LOG(WARNING)<<"====>>> Maybe error: "<<input_path.size();
+      return false;
     }
 
     BaseSolver solver(*reference_path_, *vehicle_state_, input_path);
