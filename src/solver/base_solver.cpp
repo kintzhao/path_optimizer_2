@@ -97,7 +97,7 @@ bool BaseSolver::solve(std::vector<SlState> *optimized_path) {
     time_recorder.recordTime("Retrive path");
     getOptimizedPath(QPSolution, optimized_path);
     time_recorder.recordTime("end");
-    //time_recorder.printTime();
+    time_recorder.printTime();
     return true;
 }
 
@@ -119,7 +119,7 @@ bool BaseSolver::updateProblemFormulationAndSolve(const std::vector<SlState> &in
     const auto &QPSolution = solver_.getSolution();
     getOptimizedPath(QPSolution, optimized_path);
     time_recorder.recordTime("end");
-    //time_recorder.printTime();
+    time_recorder.printTime();
     return true;
 }
 
@@ -153,7 +153,7 @@ void BaseSolver::setCost(Eigen::SparseMatrix<double> *matrix_h) const {
     time_recorder.recordTime("return matrix");
     *matrix_h = hessian.sparseView();
     time_recorder.recordTime("end");
-    //time_recorder.printTime();
+    time_recorder.printTime();
 }
 
 void BaseSolver::setConstraints(Eigen::SparseMatrix<double> *matrix_constraints,

@@ -72,7 +72,7 @@ bool PathOptimizer::solve(const std::vector<State> &reference_points, std::vecto
         return false;
     }
     time_recorder.recordTime("end");
-    //time_recorder.printTime();
+    time_recorder.printTime();
     return true;
 }
 
@@ -113,18 +113,22 @@ bool PathOptimizer::processReferencePath() {
         LOG(ERROR) << "Smoothed path is empty!";
         return false;
     }
-
+    TimeRecorder time_recorder("PRS:");
+    time_recorder.recordTime("PRS:init");    
     processInitState();
     // If the start heading differs a lot with the ref path, quit.
     if (fabs(vehicle_state_->getInitError().back()) > 75 * M_PI / 180) {
         LOG(ERROR) << "Initial psi error is larger than 75°, quit path optimization!";
         return false;
     }
+    time_recorder.recordTime("PRS:build");        
     setReferencePathLength();
     reference_path_->buildReferenceFromSpline(FLAGS_output_spacing / 2.0, FLAGS_output_spacing);
     LOG(INFO)<<"length:"<<reference_path_->getLength();
-
-    reference_path_->updateBounds(*grid_map_);
+    time_recorder.recordTime("PRS:update");      
+    reference_path_->updateBounds(*grid_map_);//TODO:: cost much
+    time_recorder.recordTime("PRS:end");   
+    time_recorder.printTime();          
     return true;
 }
 
@@ -179,7 +183,7 @@ bool PathOptimizer::optimizePath(std::vector<SlState> *final_path) {
         return false;
     }
     time_recorder.recordTime("end");
-    //time_recorder.printTime();
+    time_recorder.printTime();
     return true;
 }
 

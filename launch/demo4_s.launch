@@ -1,8 +1,8 @@
 <launch>
   <arg name="image"  default="sim.pgm"/>
-  <arg name="map_topic"  default="/map"/>
-  <arg name="sub_path_topic"  default="/move_base/GlobalPlanner/plan"/>
-
+  <arg name="map_topic"  default="/move_base/special_local_costmap/costmap"/>
+  <arg name="sub_path_topic"  default="/move_base/SpecialLocalPlanner/plan"/>
+  
     <node pkg="path_optimizer_2" type="path_optimizer_2_demo4" name="path_optimizer_2_demo" args="--log_dir=." output="screen"   >
       <param name="image" type="str" value="$(arg image)"/>
       <param name="map_topic" type="str" value="$(arg map_topic)"/>

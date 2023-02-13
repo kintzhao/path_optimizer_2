@@ -236,12 +236,12 @@ std::vector<double> ReferencePathImpl::getClearanceWithDirectionStrict(const Pat
     // TODO: too much repeated code!
     double left_bound = 0;
     double right_bound = 0;
-    double delta_s = 0.3;//TODO::
+    double delta_s = 0.05;//0.3;//TODO::
     double left_angle = constrainAngle(state.heading + M_PI_2);
     double right_angle = constrainAngle(state.heading - M_PI_2);
-    static auto search_radius = 0.5;//TODO::
+    static auto search_radius = 0.25;//0.35;//0.5;//TODO::
 
-    auto n = static_cast<size_t >(6.0 / delta_s);//TODO::
+    auto n = static_cast<size_t >(1.2 / delta_s);//TODO::
     // Check if the original position is collision free.
     grid_map::Position original_position(state.x, state.y);
     auto original_clearance = map.getObstacleDistance(original_position);

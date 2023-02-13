@@ -53,6 +53,7 @@ Visualization Manager:
       Marker Topic: /path_optimizer_2_demo/markers
       Name: MarkerArray
       Namespaces:
+        block state: true
         center bounds: true
         end point: true
         front bounds: true
@@ -79,9 +80,9 @@ Visualization Manager:
       Value: false
     - Class: rviz/Axes
       Enabled: true
-      Length: 10
+      Length: 0.5
       Name: Axes
-      Radius: 0.5
+      Radius: 0.25
       Reference Frame: <Fixed Frame>
       Value: true
   Enabled: true
@@ -111,7 +112,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.009999999776482582
+      Angle: -1.499999761581421
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -121,11 +122,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 41.3370246887207
+      Scale: 26.128490447998047
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 23.413171768188477
-      Y: 5.2371320724487305
+      X: 0.36757680773735046
+      Y: 1.2616790533065796
     Saved: ~
 Window Geometry:
   Displays:
@@ -144,4 +145,4 @@ Window Geometry:
     collapsed: true
   Width: 1389
   X: 531
-  Y: 100
+  Y: 70

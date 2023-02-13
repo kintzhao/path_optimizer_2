@@ -5,6 +5,7 @@
 #include "reference_path_smoother/reference_path_smoother.hpp"
 #include "tools/spline.h"
 #include "tools/tools.hpp"
+#include "tools/time_recorder.h"
 #include "tools/Map.hpp"
 #include "config/planning_flags.hpp"
 #include "data_struct/reference_path.hpp"
@@ -43,15 +44,23 @@ bool ReferencePathSmoother::solve(std::shared_ptr<PathOptimizationNS::ReferenceP
         LOG(ERROR) << "Few reference points.";
         return false;
     }
+    TimeRecorder time_recorder("RF_solve");
+    time_recorder.recordTime("RF_solve:path2st");    
     LOG(INFO)<<" bSpline"; 
     //bSpline();
     path2st();
     LOG(INFO)<<" smooth"; 
+    time_recorder.recordTime("RF_solve:smooth");        
     if (!smooth(reference_path)) return false;
     LOG(INFO)<<" graphSearchDp";
-    if (!graphSearchDp(reference_path)) return false;
+    time_recorder.recordTime("RF_solve:graphSearchDp");      
+    if (!graphSearchDp(reference_path)) return false;//TODO:: cost much
     LOG(INFO)<<" postSmooth";
-    return postSmooth(reference_path);
+    time_recorder.recordTime("RF_solve:postSmooth");
+    bool post_result = postSmooth(reference_path);
+    time_recorder.recordTime("RF_solve:end");
+    time_recorder.printTime();    
+    return post_result;
 }
 
 bool ReferencePathSmoother::segmentRawReference(std::vector<double> *x_list,

@@ -243,11 +243,13 @@ void mapCb(const nav_msgs::OccupancyGridConstPtr &map)
 		for (int col = 0; col < width; col++) {
       //uchar value = map->data[(map->info.height - row - 1) * map->info.width + col];
       uchar value = map->data[(height - row - 1) * width + col];      
-			if(value >=0 && value <= 25)
+			//if(value >=0 && value <= 25)
+			if(value >=0 && value <100)      
       {
         im_m.at<uchar>(row, col) = 254;
       }
-      else if(value >=65 && value <= 100)
+      //else if(value >=65 && value <= 100)
+      else if(value == 100)      
       {
         im_m.at<uchar>(row, col) = 0;
       }
@@ -321,15 +323,19 @@ int main(int argc, char **argv)
   ros::NodeHandle nh("~");
   std::string image_file = "gridmap.png";
   nh.getParam("image", image_file);
- 
+
+  std::string map_topic = "/map";  
+  std::string sub_path_topic = "/move_base/GlobalPlanner/plan";    
+  nh.getParam("map_topic", map_topic);
+  nh.getParam("sub_path_topic", sub_path_topic);  
   // Set publishers.
   ros::Publisher map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("grid_map", 1, true);
   // Set subscribers.
   // ros::Subscriber reference_sub = nh.subscribe("/clicked_point", 1, referenceCb);
   // ros::Subscriber start_sub = nh.subscribe("/initialpose", 1, startCb);
   // ros::Subscriber end_sub = nh.subscribe("/move_base_simple/goal", 1, goalCb);
-  ros::Subscriber map_sub = nh.subscribe("/map", 1, mapCb);
-  ros::Subscriber path_sub_ = nh.subscribe("/move_base/GlobalPlanner/plan", 2, pathCb);
+  ros::Subscriber map_sub = nh.subscribe(map_topic, 1, mapCb);
+  ros::Subscriber path_sub_ = nh.subscribe(sub_path_topic, 2, pathCb);
 
   // Markers initialization.
   ros_viz_tools::RosVizTools markers(nh, "markers");
@@ -416,7 +422,7 @@ int main(int argc, char **argv)
     bool opt_ok = false;
     //LOG(INFO) << " reference_rcv:" << reference_rcv<< " start_state_rcv:" << start_state_rcv<< " end_state_rcv:" << end_state_rcv;          
     LOG(INFO) << "==========================================================="; 
-    if(!map_rcv)
+    if(!map_rcv || !reference_rcv)
     {
       ros::spinOnce();
       rate.sleep();
@@ -424,6 +430,8 @@ int main(int argc, char **argv)
     }             
     if (reference_rcv && start_state_rcv && end_state_rcv && map_rcv)
     {
+      reference_rcv = false;
+      ros::Time start_time = ros::Time::now();
       LOG(INFO) << "start PathOptimizer, end_state_rcv:" << end_state_rcv;      
       PathOptimizationNS::PathOptimizer path_optimizer(start_state, end_state, grid_map_);
       opt_ok = path_optimizer.solve(ref_path_plot, &result_path);
@@ -441,8 +449,8 @@ int main(int argc, char **argv)
       if (opt_ok)
       {
         std::cout << "ok!" << std::endl;
-      }
-      LOG(INFO) << "start PathOptimizer, opt_ok:" << opt_ok; 
+      }  
+      LOG(INFO) << "start PathOptimizer, opt_ok:" << opt_ok<<" Time_cost:"<<(ros::Time::now()- start_time).toSec()<<" len:"<<reference_path_opt.getLength(); 
 
       // Visualize input_path
       {
